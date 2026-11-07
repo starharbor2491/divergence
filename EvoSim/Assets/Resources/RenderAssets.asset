@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88071451ec1bc4628a95c8fc29936226, type: 3}
+  m_Name: RenderAssets
+  m_EditorClassIdentifier: Evo.UnityLayer::Evo.UnityLayer.RenderAssets
+  UnlitVertexColorTexture: {fileID: 4800000, guid: 7c0a40df90c5d41ff9f444060591fb74, type: 3}
+  FontRegular: {fileID: 12800000, guid: 249031cc975f447458e1f36f02888990, type: 3}
+  FontMedium: {fileID: 12800000, guid: 68616d59f90ee43b68d5a187b8e161a2, type: 3}
+  FontBold: {fileID: 12800000, guid: b39c89197ab8748a79a89be5b9099d5b, type: 3}
+  RuntimeTheme: {fileID: -4733365628477956816, guid: 580600913bbf546e5a7ffd3571533370, type: 3}

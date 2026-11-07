@@ -1,0 +1,18 @@
+# Repeated Toxin spills in the middle of the World, every 30 s from minute 8 to minute 16
+at 480 toxinspill 1 60 x=80 y=45 r=60
+at 510 toxinspill 1 60 x=80 y=45 r=60
+at 540 toxinspill 1 60 x=80 y=45 r=60
+at 570 toxinspill 1 60 x=80 y=45 r=60
+at 600 toxinspill 1 60 x=80 y=45 r=60
+at 630 toxinspill 1 60 x=80 y=45 r=60
+at 660 toxinspill 1 60 x=80 y=45 r=60
+at 690 toxinspill 1 60 x=80 y=45 r=60
+at 720 toxinspill 1 60 x=80 y=45 r=60
+at 750 toxinspill 1 60 x=80 y=45 r=60
+at 780 toxinspill 1 60 x=80 y=45 r=60
+at 810 toxinspill 1 60 x=80 y=45 r=60
+at 840 toxinspill 1 60 x=80 y=45 r=60
+at 870 toxinspill 1 60 x=80 y=45 r=60
+at 900 toxinspill 1 60 x=80 y=45 r=60
+at 930 toxinspill 1 60 x=80 y=45 r=60
+at 960 toxinspill 1 60 x=80 y=45 r=60

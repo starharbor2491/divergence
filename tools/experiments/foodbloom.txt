@@ -1,0 +1,2 @@
+# Food bloom over the whole World at 8 minutes
+at 480 foodbloom 1 600 world

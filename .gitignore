@@ -1,0 +1,26 @@
+# Unity-generated files
+/EvoSim/Library/
+/EvoSim/Temp/
+/EvoSim/Obj/
+/EvoSim/Logs/
+/EvoSim/UserSettings/
+/EvoSim/Builds/
+/EvoSim/MemoryCaptures/
+/EvoSim/Recordings/
+
+# Local builds and school journal
+/Builds/
+/Journal/
+
+# macOS metadata
+.DS_Store
+
+# dotnet tool outputs
+bin/
+obj/
+*.csproj.user
+
+# scratch
+/tmp/
+/outputs/
+node_modules/

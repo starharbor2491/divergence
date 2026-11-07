@@ -1,0 +1,2 @@
+# Ice age over the whole World at 8 minutes
+at 480 iceage 0.3 600 world

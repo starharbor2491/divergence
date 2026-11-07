@@ -1,0 +1,2 @@
+# Heat wave over the whole World at 8 minutes: 0.3 above normal for 10 minutes
+at 480 heatwave 0.3 600 world

@@ -1,0 +1,241 @@
+{
+ "pageSize": "A4",
+ "pageMargins": [
+  40,
+  36,
+  40,
+  30
+ ],
+ "defaultStyle": {
+  "font": "Roboto",
+  "fontSize": 9.5
+ },
+ "info": {
+  "title": "Divergence rulebook"
+ },
+ "styles": {
+  "title": {
+   "fontSize": 26,
+   "bold": true
+  },
+  "sub": {
+   "fontSize": 11,
+   "color": "#555555"
+  },
+  "h2": {
+   "fontSize": 11.5,
+   "bold": true,
+   "color": "#1F4E9C",
+   "margin": [
+    0,
+    8,
+    0,
+    2
+   ]
+  },
+  "body": {
+   "fontSize": 9.5,
+   "lineHeight": 1.2
+  }
+ },
+ "content": [
+  {
+   "text": "divergence",
+   "style": "title"
+  },
+  {
+   "text": "a natural selection simulation. Rulebook",
+   "style": "sub",
+   "margin": [
+    0,
+    0,
+    0,
+    6
+   ]
+  },
+  {
+   "text": [
+    {
+     "text": "To start: ",
+     "bold": true
+    },
+    "open the hosted link, choose a Preset (or type a Seed), and press Start. Press Pause to freeze, 1 to 4 for speed. Click the World to inspect a Cell. In the side panel, read the Traits tab to see how a Trait changes over generations."
+   ],
+   "style": "body",
+   "margin": [
+    0,
+    0,
+    0,
+    2
+   ]
+  },
+  {
+   "columns": [
+    {
+     "width": "*",
+     "stack": [
+      {
+       "text": "What this is",
+       "style": "h2"
+      },
+      {
+       "text": "Divergence is a model of natural selection. Cells live in a World with Food, Toxin and varying Temperature. Cells that suit the World survive and reproduce, so their Traits become more common over generations. Over time the population can split into Species.",
+       "style": "body"
+      },
+      {
+       "text": "Controls",
+       "style": "h2"
+      },
+      {
+       "text": "Drag to move the view. Scroll to zoom. Click a Cell to inspect it. Space pauses. Keys 1 to 4 change speed. F fits the World. T shows Temperature. Tab hides the side panel. Escape cancels or closes.",
+       "style": "body"
+      },
+      {
+       "text": "Settings",
+       "style": "h2"
+      },
+      {
+       "text": "The Seed fixes the World. Food abundance, Temperature range, zone scale, Toxin level and mutation rate shape it. Presets fill these in. The same Seed and settings always make the same starting World.",
+       "style": "body"
+      },
+      {
+       "text": "The World",
+       "style": "h2"
+      },
+      {
+       "text": "Temperature varies smoothly from cold to hot. Food appears as pellets, more in some places than others. Toxin is a set of particles that drift, attract each other slightly and fade.",
+       "style": "body"
+      },
+      {
+       "text": "Traits",
+       "style": "h2"
+      },
+      {
+       "text": "Each Cell inherits ten Traits: size, speed, sense range, preferred Temperature, Temperature tolerance, Toxin resistance, diet, reproduction threshold, and two mating Traits. Each Trait helps in some way and costs energy in another, so no Cell is best everywhere.",
+       "style": "body"
+      },
+      {
+       "text": "What the model simplifies",
+       "style": "h2"
+      },
+      {
+       "text": "Species never merge once they have split. Cells live in an open World with a wall, not on a grid. Every Run is repeatable: the same Seed and settings start the same World, but later births involve chance, and Events you place change the outcome.",
+       "style": "body"
+      }
+     ]
+    },
+    {
+     "width": 14,
+     "text": ""
+    },
+    {
+     "width": "*",
+     "stack": [
+      {
+       "text": "Reproduction",
+       "style": "h2"
+      },
+      {
+       "text": "A Cell divides when it has stored enough energy. The child gets a copy of the Genome with small random changes called mutations. Mutations are how new Traits and new Brains appear.",
+       "style": "body"
+      },
+      {
+       "text": "Species and colours",
+       "style": "h2"
+      },
+      {
+       "text": "Cells begin white. A Cell's colour comes from its Genome, so similar Cells have similar colours. A Species is a group of Cells whose Genomes are close together. A new Species appears when a group drifts far enough from the rest.",
+       "style": "body"
+      },
+      {
+       "text": "Charts",
+       "style": "h2"
+      },
+      {
+       "text": "Traits shows one Trait over time. Species shows population by Species. Tree shows which Species came from which. Stats shows counts and causes of death.",
+       "style": "body"
+      },
+      {
+       "text": "Events",
+       "style": "h2"
+      },
+      {
+       "text": "Events change the World while a Run is going. Choose an Event, set its size, then click the World to place it.",
+       "style": "body"
+      },
+      {
+       "text": "Save and exports",
+       "style": "h2"
+      },
+      {
+       "text": "Save downloads the Run as a file. Load restores it exactly. Export CSV downloads the recorded data. Screenshot downloads an image of the window.",
+       "style": "body"
+      },
+      {
+       "text": "The five Events",
+       "style": "h2"
+      },
+      {
+       "table": {
+        "widths": [
+         62,
+         "*"
+        ],
+        "body": [
+         [
+          {
+           "text": "Heat wave",
+           "bold": true
+          },
+          "Raises Temperature inside the circle, then lets it return to normal."
+         ],
+         [
+          {
+           "text": "Ice age",
+           "bold": true
+          },
+          "Lowers Temperature inside the circle, then lets it return to normal."
+         ],
+         [
+          {
+           "text": "Famine",
+           "bold": true
+          },
+          "Removes most Food inside the circle and slows new Food there for a while."
+         ],
+         [
+          {
+           "text": "Food bloom",
+           "bold": true
+          },
+          "Adds extra Food inside the circle for a while."
+         ],
+         [
+          {
+           "text": "Toxin spill",
+           "bold": true
+          },
+          "Releases Toxin inside the circle. It spreads slowly and fades."
+         ]
+        ]
+       },
+       "layout": "lightHorizontalLines",
+       "fontSize": 8.5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "text": "Window size: at least 1280 by 720. Works in recent Chrome, Edge, Firefox and Safari.",
+   "fontSize": 8.5,
+   "color": "#555555",
+   "margin": [
+    0,
+    12,
+    0,
+    0
+   ]
+  }
+ ]
+}

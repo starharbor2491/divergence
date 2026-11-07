@@ -1,0 +1,19 @@
+{
+    "name": "Evo.Editor",
+    "rootNamespace": "Evo.Editor",
+    "references": [
+        "Evo.Core",
+        "Evo.UnityLayer"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

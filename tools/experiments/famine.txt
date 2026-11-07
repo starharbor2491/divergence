@@ -1,0 +1,2 @@
+# Famine over the whole World at 8 minutes
+at 480 famine 1 600 world
