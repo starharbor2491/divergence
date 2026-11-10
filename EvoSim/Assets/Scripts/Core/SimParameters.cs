@@ -109,7 +109,40 @@ namespace Evo.Core
 
         public bool Validate()
         {
-            return Dt > 0f && MaxCells <= PoolCapacity && FounderCount <= MaxCells && WorldWidth > 0f && WorldHeight > 0f;
+            float[] values = {
+                WorldWidth, WorldHeight, Dt, FounderStartEnergy, FoodEnergy, FoodRadius, FoodRate, FoodNoiseScale,
+                ToxinHalfLifeCloud, ToxinHalfLifeSpill, ToxinDamping, ToxinDrift, ToxinRc, ToxinG, ToxinAccelCap,
+                ToxinMinStrength, ToxinSenseStrength, BaseSize, BaseSense, BaseResist, BaseTolerance, MoveCost,
+                AgeStart, AgeCost, TempStressCost, ToxinCost, ToxinExposure, TurnRate, DrainTimeConstant, MaxEnergyPerSize,
+                DietFoodPenalty, PredationRatio, PredationMinDiet, BiteOutputThreshold, BiteTime, BiteReach,
+                PredatorEnergyShare, PredatorMaxShare, ParentKeep, ChildShare, TraitMutationChance, TraitMutationSd,
+                WeightMutationChance, WeightMutationSd, BigStepChance, BigStepFactor, WeightLimit, FounderTraitSpread,
+                FounderWeightSd, InnateWiring, SexThreshold, MateEnergyFraction, MateCost, MateChildShare,
+                MateDistMaxFactor, MateDistMinFactor, SpeciesTheta, SpeciesCheckSeconds, DistanceTraitWeight,
+                DistanceBrainWeight, DistanceBrainDivisor, CentroidKeep, SampleSeconds, DeathBinSeconds,
+                TraitBinHalfWindow, HeatRampUp, HeatRampDown, FamineRemoveShare, FamineRejectShare, BloomRate,
+                SpillParticlesPer10Radius
+            };
+            foreach (float value in values)
+                if (!SnapshotValidation.Range(value, 0, 10000)) return false;
+            float[] shares = { FounderStartEnergy, DietFoodPenalty, PredationMinDiet, BiteOutputThreshold,
+                PredatorEnergyShare, PredatorMaxShare, ParentKeep, ChildShare, TraitMutationChance,
+                WeightMutationChance, BigStepChance, SexThreshold, MateEnergyFraction, MateCost,
+                MateChildShare, CentroidKeep, FamineRemoveShare, FamineRejectShare, ToxinMinStrength, ToxinSenseStrength };
+            foreach (float share in shares) if (share > 1) return false;
+            // Saved Runs must fit the shipped renderer and bounded Core work buffers.
+            return SnapshotValidation.Range(Dt, 0.001, 1) &&
+                SnapshotValidation.Range(WorldWidth, 20, 1000) && SnapshotValidation.Range(WorldHeight, 20, 1000) &&
+                FounderCount >= 0 && FounderCount <= MaxCells && MaxCells >= 1 && MaxCells <= 600 &&
+                PoolCapacity >= MaxCells && PoolCapacity <= 700 && MaxFood >= 0 && MaxFood <= 1500 &&
+                InitialFood >= 0 && InitialFood <= MaxFood && FoodSpawnTries >= 1 && FoodSpawnTries <= 100 &&
+                MaxToxin >= 0 && MaxToxin <= 1500 && MaxSamples >= 4 && MaxSamples <= 3600 &&
+                MaxActiveEvents >= 0 && MaxActiveEvents <= 16 && SpeciesMinGroup >= 1 && SpeciesMinGroup <= 600 &&
+                ToxinHalfLifeCloud > 0 && ToxinHalfLifeSpill > 0 && MaxEnergyPerSize > 0 && DrainTimeConstant >= Dt &&
+                DistanceBrainDivisor > 0 && SpeciesTheta > 0 && TraitBinHalfWindow > 0 &&
+                HeatRampUp > 0 && HeatRampDown > 0 && DeathBinSeconds >= 0.1f &&
+                SampleSeconds >= Dt && SpeciesCheckSeconds >= Dt && FoodRate <= 1000 && BloomRate <= 1000 &&
+                WeightLimit <= 100 && InnateWiring <= 100 && FounderWeightSd <= 100;
         }
     }
 

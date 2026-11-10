@@ -374,13 +374,16 @@ namespace Evo.Core
 
             StepCount++;
             if (StepCount % secondSteps == 0) Stats.RollSecond();
-            if (StepCount % speciesCheckSteps == 0) Species.Check(Cells, Time);
-            if (StepCount % Stats.IntervalSteps == 0) Stats.Sample(Cells, Species, Time);
             if (Cells.AliveCount == 0)
             {
                 Extinct = true;
-                Species.Check(Cells, Time);
+                Species.Finish(Time);
                 Stats.Sample(Cells, Species, Time);
+            }
+            else
+            {
+                if (StepCount % speciesCheckSteps == 0) Species.Check(Cells, Time);
+                if (StepCount % Stats.IntervalSteps == 0) Stats.Sample(Cells, Species, Time);
             }
         }
 

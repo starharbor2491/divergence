@@ -62,7 +62,7 @@ namespace Evo.UnityLayer
             energy = Readout(rows, "energy", "inspect-energy");
             age = Readout(rows, "age", "inspect-age");
             generation = Readout(rows, "generation", "inspect-generation");
-            parentValue = Readout(rows, "parent", "inspect-generation");
+            parentValue = Readout(rows, "parent", "inspect-parent");
             Add(rows);
 
             VisualElement bars = Ui.Column();
@@ -98,7 +98,13 @@ namespace Evo.UnityLayer
                 traitValue[i].style.unityTextAlign = TextAnchor.MiddleRight;
                 row.Add(traitValue[i]);
                 row.pickingMode = PickingMode.Position;
-                Tooltips.Attach(row, "inspect-trait");
+                int trait = i;
+                Tooltips.Attach(row, () =>
+                {
+                    TipContent tip = UiText.TraitTip(trait);
+                    tip.Body += " " + UiText.Body("inspect-trait");
+                    return tip;
+                });
                 bars.Add(row);
             }
             Add(bars);

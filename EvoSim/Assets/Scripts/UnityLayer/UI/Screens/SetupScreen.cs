@@ -86,8 +86,7 @@ namespace Evo.UnityLayer
             start.Clicked += () => app.StartRun(app.SetupDraft);
             var load = new EvoButton(ButtonKind.Secondary, "Load saved run", null, "load");
             load.style.marginLeft = DesignTokens.Space2;
-            load.Clicked += app.LoadRunFromPicker;
-            load.RegisterCallback<PointerDownEvent>(e => FileBridge.ArmPick(".json,application/json"), TrickleDown.TrickleDown);
+            FileBridge.BindPicker(load, app.LoadRunFromPicker, () => !ui.ModalOpen && !ui.WindowTooSmall);
             var help = new EvoButton(ButtonKind.Secondary, "How it works", null, "help");
             help.style.marginLeft = DesignTokens.Space2;
             help.Clicked += ui.OpenHelp;

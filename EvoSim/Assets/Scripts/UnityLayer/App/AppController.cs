@@ -21,6 +21,7 @@ namespace Evo.UnityLayer
         public bool PanelOpen { get; private set; } = true;
         public SetupSettings SetupDraft = Presets.Get("Mild world");
         public EventSpec Armed { get; private set; }
+        public bool Loading { get; private set; }
         public float EffectiveSpeed { get { return runner.EffectiveSpeed; } }
 
         public WorldView WorldView { get; private set; }
@@ -30,6 +31,8 @@ namespace Evo.UnityLayer
 
         readonly SimulationRunner runner = new SimulationRunner();
         int fitFrames;
+        int loadVersion;
+        AppMode beforeLoad;
 
         public static AppController Create(GameObject host, WorldView world, CameraController cam)
         {
@@ -67,6 +70,7 @@ namespace Evo.UnityLayer
                 }
             }
             WorldView.TintOn = TintOn;
+            ValidateHighlight();
             if (Sim != null)
             {
                 Ui.SyncViewport();
@@ -84,12 +88,18 @@ namespace Evo.UnityLayer
 
         public void Restart()
         {
-            if (Sim != null) StartRun(Sim.Setup);
+            if (Sim != null)
+            {
+                SetupSettings settings = Sim.Setup.Clone();
+                GuardRunChange("Restart this Run?", "Restart", () => StartRun(settings));
+            }
         }
 
         void Begin(Simulation sim, AppMode mode)
         {
+            CancelLoad();
             Sim = sim;
+            FileBridge.ProtectRun(true);
             Mode = mode;
             Armed = null;
             runner.Reset();
@@ -102,12 +112,30 @@ namespace Evo.UnityLayer
 
         public void GoToSetup()
         {
+            GuardRunChange("Return to the menu?", "Discard", DiscardToSetup);
+        }
+
+        void DiscardToSetup()
+        {
+            CancelLoad();
             SetupDraft = Sim != null ? Sim.Setup.Clone() : SetupDraft;
             Sim = null;
+            FileBridge.ProtectRun(false);
             Mode = AppMode.Setup;
             Armed = null;
             WorldView.SetSimulation(null);
             Ui.OnModeChanged();
+        }
+
+        void GuardRunChange(string title, string action, System.Action proceed)
+        {
+            if (Sim == null) { proceed(); return; }
+            Simulation expected = Sim;
+            AppMode previous = Mode;
+            if (Mode == AppMode.Running) Mode = AppMode.Paused;
+            Ui.ConfirmRunAction(title, action,
+                () => { if (Sim == expected) proceed(); },
+                () => { if (Sim == expected) { Mode = previous; Ui.OnModeChanged(); } });
         }
 
         // ------------------------------------------------------------ transport
@@ -125,7 +153,7 @@ namespace Evo.UnityLayer
 
         public void ToggleTint() { TintOn = !TintOn; }
 
-        public void TogglePanel() { PanelOpen = !PanelOpen; fitFrames = 4; Ui.OnPanelToggled(); }
+        public void TogglePanel() { PanelOpen = !PanelOpen; Ui.OnPanelToggled(); }
 
         public void FitView() { Cam.Fit(); }
 
@@ -142,6 +170,15 @@ namespace Evo.UnityLayer
         public void ToggleHighlight(int speciesId)
         {
             WorldView.HighlightSpeciesId = WorldView.HighlightSpeciesId == speciesId ? 0 : speciesId;
+            ValidateHighlight();
+        }
+
+        void ValidateHighlight()
+        {
+            if (Sim == null || WorldView.HighlightSpeciesId == 0) return;
+            for (int i = 0; i < Sim.Cells.AliveCount; i++)
+                if (Sim.Cells.Alive[i].SpeciesId == WorldView.HighlightSpeciesId) return;
+            WorldView.HighlightSpeciesId = 0;
         }
 
         // ------------------------------------------------------------ Events
@@ -162,17 +199,27 @@ namespace Evo.UnityLayer
         public void PlaceArmedAt(Vector2 world)
         {
             if (Armed == null || Sim == null) return;
+            if (!WorldContains(world))
+            {
+                Ui.Toast("status-warning", "Click inside the World boundary to place the Event.");
+                return;
+            }
             Armed.X = world.x;
             Armed.Y = world.y;
-            Sim.PlaceEvent(Armed);
-            CancelPlacement();
+            if (Sim.PlaceEvent(Armed)) CancelPlacement();
+            else Ui.Toast("status-warning", "Too many Events are active. The Event is still ready to place.");
+        }
+
+        public bool WorldContains(Vector2 point)
+        {
+            return Sim != null && point.x >= 0f && point.y >= 0f && point.x <= Sim.World.Width && point.y <= Sim.World.Height;
         }
 
         public void ApplyWholeWorld(EventSpec spec)
         {
             if (Sim == null) return;
             spec.WholeWorld = true;
-            Sim.PlaceEvent(spec);
+            if (Sim.PlaceEvent(spec)) CancelPlacement();
         }
 
         // ------------------------------------------------------------ files
@@ -180,24 +227,55 @@ namespace Evo.UnityLayer
         {
             if (Sim == null) return;
             RunFiles.DownloadText(RunFiles.RunFileName(Sim), "application/json", RunFiles.ToJson(Sim));
-            Ui.Toast("status-good", "Run saved as " + RunFiles.RunFileName(Sim));
+            Ui.Toast("status-good", "Download requested: " + RunFiles.RunFileName(Sim));
         }
 
         public void ExportCsv()
         {
             if (Sim == null) return;
             RunFiles.ExportCsv(Sim);
-            Ui.Toast("status-good", "Files exported: traits-over-time.csv and species.csv");
+            Ui.Toast("status-good", "Two CSV downloads requested. Your browser may ask permission for multiple files.", 8f);
         }
 
         public void LoadRunFromPicker()
         {
-            FileBridge.PickText(".json,application/json", OnLoadText);
+            if (Loading) return;
+            int request = ++loadVersion;
+            Simulation expected = Sim;
+            beforeLoad = Mode;
+            Loading = true;
+            if (Mode == AppMode.Running) Mode = AppMode.Paused;
+            Ui.CloseAll();
+            ChartElement.HideReadouts();
+            Ui.OnLoadingChanged();
+            FileBridge.PickText(".json,application/json", result =>
+            {
+                if (!Loading || request != loadVersion || Sim != expected) return;
+                Loading = false;
+                Mode = beforeLoad;
+                Ui.OnLoadingChanged();
+                if (result.Status == FilePickStatus.Cancelled) return;
+                if (result.Status == FilePickStatus.Error)
+                {
+                    Ui.Toast("status-serious", "This file could not be read. Choose a readable Run file.", 8f);
+                    return;
+                }
+                OnLoadText(result.Text);
+            });
+        }
+
+        public void CancelLoad()
+        {
+            loadVersion++;
+            FileBridge.CancelPick();
+            if (!Loading) return;
+            Loading = false;
+            Mode = beforeLoad;
+            if (Ui != null) Ui.OnLoadingChanged();
         }
 
         void OnLoadText(string text)
         {
-            if (string.IsNullOrEmpty(text)) return;
             string error;
             Simulation sim = RunFiles.FromJson(text, out error);
             if (sim == null)
@@ -205,8 +283,11 @@ namespace Evo.UnityLayer
                 Ui.Toast("status-serious", error, 8f);
                 return;
             }
-            Begin(sim, sim.Extinct ? AppMode.Extinct : AppMode.Paused);
-            Ui.Toast("status-good", "Run loaded");
+            GuardRunChange("Replace the current Run?", "Replace", () =>
+            {
+                Begin(sim, sim.Extinct ? AppMode.Extinct : AppMode.Paused);
+                Ui.Toast("status-good", "Run loaded");
+            });
         }
 
         public void TakeScreenshot()
@@ -217,15 +298,17 @@ namespace Evo.UnityLayer
 
         IEnumerator ScreenshotRoutine()
         {
+            Simulation captured = Sim;
+            string name = RunFiles.ScreenshotFileName(captured);
             Tooltips.Hide();
             yield return new WaitForEndOfFrame();
+            if (Sim != captured) yield break;
             Texture2D tex = ScreenCapture.CaptureScreenshotAsTexture();
             if (tex == null) yield break;
             byte[] png = tex.EncodeToPNG();
             Destroy(tex);
-            string name = RunFiles.ScreenshotFileName(Sim);
             FileBridge.Download(name, "image/png", png);
-            Ui.Toast("status-good", "Screenshot saved as " + name);
+            Ui.Toast("status-good", "Download requested: " + name);
         }
     }
 }

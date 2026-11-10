@@ -21,12 +21,13 @@ namespace Evo.UnityLayer
             maxGen = AddRow(grid, "highest generation", "stat-readout");
             living = AddRow(grid, "living species", "stat-readout");
             extinct = AddRow(grid, "extinct species", "stat-readout");
-            sexual = AddRow(grid, "sexual share", "stat-readout");
+            sexual = AddRow(grid, "sexual share", "stat-sexual-share");
             Add(grid);
 
             FixedHeight(chart, 220);
             VisualElement deathsBox = Ui.Column();
             deathsBox.Add(chart);
+            deathsBox.Add(Ui.Caption("Last 10 minutes. Legend: Run totals."));
             VisualElement legendBox = Ui.Column();
             legendBox.style.marginTop = DesignTokens.Space2;
             for (int c = 0; c < DeathCauses.Count; c++)

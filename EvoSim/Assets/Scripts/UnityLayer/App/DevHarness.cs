@@ -16,7 +16,10 @@ namespace Evo.UnityLayer
         {
             string[] args = Environment.GetCommandLineArgs();
             for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (args[i] == "-evoUxShots") { app.StartCoroutine(UxSmokeTour.Run(app, args[i + 1])); return; }
                 if (args[i] == "-evoShots") { app.StartCoroutine(Tour(app, args[i + 1])); return; }
+            }
         }
 
         static IEnumerator Shot(string dir, string name)

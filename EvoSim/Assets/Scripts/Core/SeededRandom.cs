@@ -124,15 +124,5 @@ namespace Evo.Core
             return h;
         }
 
-        const string Alphabet = "abcdefghijkmnpqrstuvwxyz23456789";
-
-        /// <summary>A random 6-character Seed. The caller supplies the randomness (the Unity layer, not the simulation).</summary>
-        public static string RandomText(uint entropy)
-        {
-            var rng = new SeededRandom(entropy);
-            var chars = new char[6];
-            for (int i = 0; i < chars.Length; i++) chars[i] = Alphabet[rng.NextInt(Alphabet.Length)];
-            return new string(chars);
-        }
     }
 }

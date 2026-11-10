@@ -9,10 +9,13 @@ namespace Evo.UnityLayer
     public sealed class TooltipCard : VisualElement
     {
         readonly VisualElement body = new VisualElement();
+        readonly ScrollView scroll = UiScroll.Create();
+        readonly bool interactive;
 
-        public TooltipCard()
+        public TooltipCard(bool interactive = false)
         {
-            pickingMode = PickingMode.Ignore;
+            this.interactive = interactive;
+            pickingMode = interactive ? PickingMode.Position : PickingMode.Ignore;
             style.position = Position.Absolute;
             style.backgroundColor = DesignTokens.Bg2;
             this.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
@@ -21,12 +24,19 @@ namespace Evo.UnityLayer
             style.maxWidth = DesignTokens.TooltipMaxWidth;
             style.visibility = Visibility.Hidden;
             body.pickingMode = PickingMode.Ignore;
-            Add(body);
+            scroll.pickingMode = interactive ? PickingMode.Position : PickingMode.Ignore;
+            scroll.style.flexShrink = 1;
+            scroll.style.minHeight = 0;
+            scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroll.Add(body);
+            Add(scroll);
+            if (!interactive) scroll.Query<VisualElement>().ForEach(e => e.pickingMode = PickingMode.Ignore);
         }
 
         public void SetTip(TipContent tip)
         {
             body.Clear();
+            scroll.scrollOffset = Vector2.zero;
             body.Add(Ui.CaptionBold(tip.Name, DesignTokens.Text1));
             if (!string.IsNullOrEmpty(tip.Body))
             {
@@ -80,6 +90,13 @@ namespace Evo.UnityLayer
             style.left = point.x + 14;
             style.top = point.y + 18;
             style.visibility = Visibility.Hidden;
+            if (parent != null)
+            {
+                float available = Mathf.Max(DesignTokens.ControlHeight, parent.layout.height - DesignTokens.Space2);
+                style.maxHeight = available;
+                scroll.style.maxHeight = available - DesignTokens.Space4;
+                style.maxWidth = Mathf.Min(DesignTokens.TooltipMaxWidth, parent.layout.width - DesignTokens.Space2);
+            }
             RegisterCallbackOnce<GeometryChangedEvent>(e => Reposition(point));
             schedule.Execute(() => Reposition(point)).StartingIn(0);
         }
@@ -93,8 +110,8 @@ namespace Evo.UnityLayer
             float x = point.x + 14, y = point.y + 18;
             if (x + w > pw - 4) x = point.x - 14 - w;
             if (y + h > ph - 4) y = point.y - 14 - h;
-            style.left = Mathf.Max(4, x);
-            style.top = Mathf.Max(4, y);
+            style.left = Mathf.Clamp(x, DesignTokens.Space1, Mathf.Max(DesignTokens.Space1, pw - w - DesignTokens.Space1));
+            style.top = Mathf.Clamp(y, DesignTokens.Space1, Mathf.Max(DesignTokens.Space1, ph - h - DesignTokens.Space1));
             style.visibility = Visibility.Visible;
         }
     }
@@ -115,8 +132,10 @@ namespace Evo.UnityLayer
         public static readonly HashSet<string> AttachedIds = new HashSet<string>();
 
         static TooltipCard card;
+        static TooltipCard readout;
         static IVisualElementScheduledItem pending;
         static VisualElement owner;
+        static bool interactive;
         static Vector2 lastPoint;
 
         public static void Init(VisualElement overlay)
@@ -124,6 +143,14 @@ namespace Evo.UnityLayer
             card = new TooltipCard();
             overlay.Add(card);
             card.Show(false);
+            readout = new TooltipCard(true);
+            overlay.Add(readout);
+            readout.Show(false);
+            readout.RegisterCallback<PointerEnterEvent>(e => Cancel());
+            readout.RegisterCallback<PointerLeaveEvent>(e =>
+            {
+                if (owner == null || !owner.worldBound.Contains(e.position)) Hide();
+            });
         }
 
         public static void Attach(VisualElement element, string id)
@@ -132,18 +159,26 @@ namespace Evo.UnityLayer
             Attach(element, () => UiText.Tip(id));
         }
 
-        public static void Attach(VisualElement element, Func<TipContent> content)
+        public static void Attach(VisualElement element, Func<TipContent> content, bool scrollable = false)
         {
             element.RegisterCallback<PointerEnterEvent>(e =>
             {
                 lastPoint = Local(e.position);
-                Cancel();
+                Hide();
                 if (card == null) return;
                 owner = element;
+                interactive = scrollable;
                 pending = element.schedule.Execute(() => Show(content())).StartingIn(DesignTokens.TooltipDelayMs);
             });
             element.RegisterCallback<PointerMoveEvent>(e => lastPoint = Local(e.position));
-            element.RegisterCallback<PointerLeaveEvent>(e => { if (owner == element) Hide(); });
+            element.RegisterCallback<PointerLeaveEvent>(e =>
+            {
+                if (owner != element) return;
+                if (!interactive) { Hide(); return; }
+                Cancel();
+                if (!readout.worldBound.Contains(e.position))
+                    pending = readout.schedule.Execute(Hide).StartingIn(DesignTokens.TooltipDelayMs);
+            });
             element.RegisterCallback<PointerDownEvent>(e => { if (owner == element) Hide(); });
             element.RegisterCallback<DetachFromPanelEvent>(e => { if (owner == element) Hide(); });
         }
@@ -161,10 +196,11 @@ namespace Evo.UnityLayer
         static void Show(TipContent tip)
         {
             if (card == null) return;
-            card.SetTip(tip);
-            card.Show(true);
-            card.BringToFront();
-            card.PlaceNear(lastPoint);
+            TooltipCard target = interactive ? readout : card;
+            target.SetTip(tip);
+            target.Show(true);
+            target.BringToFront();
+            target.PlaceNear(lastPoint);
         }
 
         public static void Hide()
@@ -175,6 +211,11 @@ namespace Evo.UnityLayer
             {
                 card.Show(false);
                 card.style.visibility = Visibility.Hidden;
+            }
+            if (readout != null)
+            {
+                readout.Show(false);
+                readout.style.visibility = Visibility.Hidden;
             }
         }
     }

@@ -15,6 +15,7 @@ namespace Evo.UnityLayer
         readonly VisualElement area, fill, thumb;
         float value;
         bool dragging, hover, enabled = true;
+        bool firstPressOnThumb;
 
         public EvoSlider(string name, string tipId, float min, float max, float defaultValue, float step, Func<float, string> format)
         {
@@ -96,14 +97,17 @@ namespace Evo.UnityLayer
 
         void FromPointer(Vector2 local)
         {
-            float w = Mathf.Max(1f, area.layout.width);
+            float w = area.layout.width;
+            if (float.IsNaN(w) || float.IsInfinity(w) || w <= 0f) return;
             SetValue(min + Mathf.Clamp01(local.x / w) * (max - min), true);
         }
 
         void OnDown(PointerDownEvent e)
         {
             if (!enabled || e.button != 0) return;
-            if (e.clickCount >= 2) { SetValue(defaultValue, true); return; }
+            bool onThumb = thumb.worldBound.Contains(e.position);
+            if (e.clickCount >= 2 && firstPressOnThumb && onThumb) { SetValue(defaultValue, true); return; }
+            if (e.clickCount < 2) firstPressOnThumb = onThumb;
             dragging = true;
             area.CapturePointer(e.pointerId);
             FromPointer(e.localPosition);
@@ -128,7 +132,7 @@ namespace Evo.UnityLayer
             float t = max > min ? (value - min) / (max - min) : 0f;
             fill.style.width = Length.Percent(t * 100f);
             fill.style.backgroundColor = enabled ? DesignTokens.Accent : DesignTokens.TextDisabled;
-            float d = (hover || dragging) && enabled ? 18f : 16f;
+            float d = (hover || dragging) && enabled ? DesignTokens.SliderThumbHoverSize : DesignTokens.SliderThumbSize;
             thumb.style.width = d; thumb.style.height = d;
             thumb.style.marginTop = (16f - d) * 0.5f;
             thumb.style.left = Length.Percent(t * 100f);

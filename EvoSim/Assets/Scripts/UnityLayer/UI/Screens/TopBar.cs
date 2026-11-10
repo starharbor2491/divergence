@@ -81,8 +81,8 @@ namespace Evo.UnityLayer
 
             Add(Divider());
             AddIcon("save", "save", app.SaveRun);
-            var load = AddIcon("load", "load", app.LoadRunFromPicker);
-            load.RegisterCallback<PointerDownEvent>(e => FileBridge.ArmPick(".json,application/json"), TrickleDown.TrickleDown);
+            var load = AddIcon("load", "load", () => { });
+            FileBridge.BindPicker(load, app.LoadRunFromPicker, () => !ui.ModalOpen && !ui.WindowTooSmall);
             AddIcon("csv", "csv", app.ExportCsv);
             AddIcon("screenshot", "screenshot", app.TakeScreenshot);
             Add(Divider());

@@ -76,7 +76,6 @@ namespace Evo.UnityLayer
             speciesEver.text = Ui.Count(sim.Species.Records.Count);
             Tooltips.Hide();
             this.Show(true);
-            BringToFront();
         }
 
         public void Close() { this.Show(false); }

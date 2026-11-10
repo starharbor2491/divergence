@@ -194,11 +194,13 @@ namespace Evo.Core
 
             if (Samples.Count >= p.MaxSamples)
             {
-                // deterministic decimation: keep every second sample and double the interval
+                // Keep every second sample, plus the final empty-population sample.
                 int w = 0;
+                int last = Samples.Count - 1;
                 for (int i = 0; i < Samples.Count; i += 2) Samples[w++] = Samples[i];
+                if (n == 0 && last % 2 != 0) Samples[w++] = s;
                 Samples.RemoveRange(w, Samples.Count - w);
-                IntervalSteps *= 2;
+                IntervalSteps = IntervalSteps <= int.MaxValue / 2 ? IntervalSteps * 2 : int.MaxValue;
             }
         }
     }

@@ -83,6 +83,11 @@ namespace Evo.Tests
             Assert.IsFalse(string.IsNullOrEmpty(error));
             Assert.IsNull(RunFiles.FromJson("", out error));
             Assert.IsFalse(string.IsNullOrEmpty(error));
+            foreach (string malformed in new[] { "{", "{\"Stats\":", "{\"Cells\":[}" })
+            {
+                Assert.IsNull(RunFiles.FromJson(malformed, out error));
+                Assert.AreEqual(UiText.LoadFailedGeneric, error);
+            }
 
             Simulation a = Simulation.Create(Presets.Get("Mild world"), new SimParameters());
             string json = RunFiles.ToJson(a).Replace("\"FormatVersion\":1", "\"FormatVersion\":99");

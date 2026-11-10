@@ -27,23 +27,33 @@ namespace Evo.UnityLayer
 
         readonly List<Label> labels = new List<Label>();
         int labelsUsed;
-        readonly TooltipCard card = new TooltipCard();
+        readonly TooltipCard card = new TooltipCard(true);
         readonly List<VisualElement> chips = new List<VisualElement>();
         readonly List<EventRecord> markers = new List<EventRecord>();
         readonly List<float> markerX = new List<float>();
         Vector2 pointer;
+        Vector2 panelPointer;
+        bool pointerInside, readingCard;
+        static readonly HashSet<ChartElement> charts = new HashSet<ChartElement>();
 
         protected ChartElement()
         {
             style.flexShrink = 0;
             style.backgroundColor = DesignTokens.ChartSurface;
             generateVisualContent += OnGenerate;
-            Add(card);
             card.Show(false);
+            RegisterCallback<AttachToPanelEvent>(e => charts.Add(this));
+            RegisterCallback<DetachFromPanelEvent>(e => { charts.Remove(this); InvalidateHover(true); card.RemoveFromHierarchy(); });
             RegisterCallback<GeometryChangedEvent>(e => Redraw());
             RegisterCallback<PointerMoveEvent>(OnMove);
-            RegisterCallback<PointerLeaveEvent>(e => SetHover(-1));
-            RegisterCallback<PointerDownEvent>(e => { if (hoverIndex >= 0 && HoverClicked != null) HoverClicked(hoverIndex); });
+            RegisterCallback<PointerLeaveEvent>(e =>
+            {
+                pointerInside = false;
+                if (!card.worldBound.Contains(e.position)) SetHover(-1);
+            });
+            card.RegisterCallback<PointerEnterEvent>(e => readingCard = true);
+            card.RegisterCallback<PointerLeaveEvent>(e => { readingCard = false; if (!worldBound.Contains(e.position)) SetHover(-1); });
+            RegisterCallback<PointerDownEvent>(e => { if (IsValidIndex(hoverIndex) && HoverClicked != null) HoverClicked(hoverIndex); });
         }
 
         // ------------------------------------------------------------ to implement
@@ -56,6 +66,19 @@ namespace Evo.UnityLayer
         protected virtual float IndexX(int index) { return 0f; }
         protected virtual void FillHover(int index, List<ReadoutRow> rows, out string title) { title = ""; }
         protected virtual void DrawHover(Painter2D p, int index) { }
+        protected virtual bool IsValidIndex(int index) { return index >= 0; }
+
+        public static void HideReadouts()
+        {
+            foreach (ChartElement chart in charts) chart.InvalidateHover(true);
+        }
+
+        protected void InvalidateHover(bool forgetPointer = false)
+        {
+            if (forgetPointer) { pointerInside = false; readingCard = false; }
+            hoverIndex = -1;
+            card.Show(false);
+        }
 
         // ------------------------------------------------------------ coordinates
         protected float X(float v) { return plot.xMin + (v - xMin) / Mathf.Max(1e-6f, xMax - xMin) * plot.width; }
@@ -70,6 +93,11 @@ namespace Evo.UnityLayer
             ComputeAxes();
             LayoutLabels();
             LayoutMarkers();
+            if (pointerInside || readingCard)
+            {
+                pointer = this.WorldToLocal(panelPointer);
+                SetHover(plot.Contains(pointer) ? SnapIndex(pointer) : -1, true);
+            }
             MarkDirtyRepaint();
         }
 
@@ -132,14 +160,31 @@ namespace Evo.UnityLayer
                     float xv = eventTimeToX(markers[i].Time);
                     if (float.IsNaN(xv) || xv < xMin - 1e-4f || xv > xMax + 1e-4f) { continue; }
                     float px = X(xv);
-                    VisualElement chip = GetChip(used);
-                    chip.style.left = px - 10;
-                    chip.style.top = 4;
-                    chip.Show(true);
-                    ((Label)chip[0]).text = EventInfo.Letters[(int)markers[i].Kind];
-                    chip.userData = markers[i];
                     markerX.Add(px);
-                    used++;
+                }
+                var order = new List<int>();
+                for (int i = 0; i < markers.Count; i++)
+                {
+                    float xv = eventTimeToX(markers[i].Time);
+                    if (!float.IsNaN(xv) && xv >= xMin && xv <= xMax) order.Add(i);
+                }
+                order.Sort((a, b) => X(eventTimeToX(markers[a].Time)).CompareTo(X(eventTimeToX(markers[b].Time))));
+                for (int i = 0; i < order.Count;)
+                {
+                    var group = new List<EventRecord>();
+                    float firstX = X(eventTimeToX(markers[order[i]].Time)), lastX = firstX;
+                    do
+                    {
+                        lastX = X(eventTimeToX(markers[order[i]].Time));
+                        group.Add(markers[order[i++]]);
+                    }
+                    while (i < order.Count && X(eventTimeToX(markers[order[i]].Time)) - lastX < DesignTokens.EventChipSize + DesignTokens.EventChipGap);
+                    VisualElement chip = GetChip(used++);
+                    chip.style.left = Mathf.Clamp((firstX + lastX) * 0.5f - DesignTokens.EventChipSize * 0.5f, 0, layout.width - DesignTokens.EventChipSize);
+                    chip.style.top = DesignTokens.Space1;
+                    chip.userData = group;
+                    ((Label)chip[0]).text = group.Count == 1 ? EventInfo.Letters[(int)group[0].Kind] : (group.Count <= 9 ? group.Count.ToString() : "+");
+                    chip.Show(true);
                 }
             }
             for (int i = used; i < chips.Count; i++) chips[i].Show(false);
@@ -151,23 +196,35 @@ namespace Evo.UnityLayer
             {
                 var chip = new VisualElement();
                 chip.style.position = Position.Absolute;
-                chip.Size(20, 20);
-                chip.Round(10);
+                chip.Size(DesignTokens.EventChipSize, DesignTokens.EventChipSize);
+                chip.Round(DesignTokens.EventChipSize * 0.5f);
                 chip.style.backgroundColor = DesignTokens.Bg2;
                 chip.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
                 chip.style.alignItems = Align.Center;
                 chip.style.justifyContent = Justify.Center;
                 Label letter = Ui.CaptionBold("", DesignTokens.Text1);
                 letter.style.unityTextAlign = TextAnchor.MiddleCenter;
-                letter.style.fontSize = 11;
                 chip.Add(letter);
                 VisualElement captured = chip;
-                Tooltips.Attach(chip, () => EventTip((EventRecord)captured.userData));
+                Tooltips.Attach(chip, () => EventGroupTip((List<EventRecord>)captured.userData), true);
                 Tooltips.AttachedIds.Add("event-marker");
                 chips.Add(chip);
                 Add(chip);
             }
             return chips[index];
+        }
+
+        static TipContent EventGroupTip(List<EventRecord> group)
+        {
+            if (group.Count == 1) return EventTip(group[0]);
+            var text = new System.Text.StringBuilder();
+            foreach (EventRecord record in group)
+            {
+                TipContent tip = EventTip(record);
+                if (text.Length > 0) text.Append('\n');
+                text.Append(tip.Name).Append(": ").Append(tip.Body);
+            }
+            return new TipContent { Name = group.Count + " Events", Body = text.ToString() };
         }
 
         static TipContent EventTip(EventRecord r)
@@ -181,6 +238,8 @@ namespace Evo.UnityLayer
         // ------------------------------------------------------------ hover
         void OnMove(PointerMoveEvent e)
         {
+            panelPointer = e.position;
+            pointerInside = true;
             pointer = this.WorldToLocal(e.position);
             if (pointer.x < plot.xMin - 4 || pointer.x > plot.xMax + 4 || pointer.y < plot.yMin - 4 || pointer.y > plot.yMax + 4)
             {
@@ -190,9 +249,10 @@ namespace Evo.UnityLayer
             SetHover(SnapIndex(pointer));
         }
 
-        void SetHover(int index)
+        void SetHover(int index, bool force = false)
         {
-            if (index == hoverIndex) return;
+            if (!IsValidIndex(index)) index = -1;
+            if (!force && index == hoverIndex) return;
             hoverIndex = index;
             if (index < 0)
             {
@@ -203,9 +263,12 @@ namespace Evo.UnityLayer
                 var rows = new List<ReadoutRow>();
                 string title;
                 FillHover(index, rows, out title);
+                VisualElement overlay = Ui.Overlay ?? this;
+                if (card.parent != overlay) overlay.Add(card);
+                card.BringToFront();
                 card.SetRows(title, rows);
                 card.Show(true);
-                card.PlaceNear(new Vector2(UseCrosshair ? IndexX(index) : pointer.x, pointer.y));
+                card.PlaceNear(overlay.WorldToLocal(this.LocalToWorld(new Vector2(UseCrosshair ? IndexX(index) : pointer.x, pointer.y))));
             }
             MarkDirtyRepaint();
         }
@@ -240,7 +303,7 @@ namespace Evo.UnityLayer
                     Segment(p, new Vector2(markerX[i], y), new Vector2(markerX[i], Mathf.Min(y + 4f, plot.yMax)), DesignTokens.Text3, 1f);
             }
 
-            if (hoverIndex >= 0 && UseCrosshair)
+            if (IsValidIndex(hoverIndex) && UseCrosshair)
             {
                 float hx = IndexX(hoverIndex);
                 Segment(p, new Vector2(hx, plot.yMin), new Vector2(hx, plot.yMax), DesignTokens.Text3, 1f);
@@ -270,18 +333,14 @@ namespace Evo.UnityLayer
             for (float v = start; v <= max + step * 1e-4f && output.Count < 12; v += step) output.Add(Mathf.Abs(v) < step * 1e-4f ? 0f : v);
         }
 
-        /// <summary>Largest index whose x value is at most the target (xs must not decrease).</summary>
+        /// <summary>Nearest value in chronological samples; population mean Generation can decrease.</summary>
         protected static int Nearest(IList<float> xs, int count, float x)
         {
             if (count == 0) return -1;
-            int lo = 0, hi = count - 1;
-            while (lo < hi)
-            {
-                int mid = (lo + hi) / 2;
-                if (xs[mid] < x) lo = mid + 1; else hi = mid;
-            }
-            if (lo > 0 && Mathf.Abs(xs[lo - 1] - x) <= Mathf.Abs(xs[lo] - x)) lo--;
-            return lo;
+            int best = 0;
+            for (int i = 1; i < count; i++)
+                if (Mathf.Abs(xs[i] - x) <= Mathf.Abs(xs[best] - x)) best = i;
+            return best;
         }
 
         public static string TimeTick(float seconds)

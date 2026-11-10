@@ -90,7 +90,7 @@ namespace Evo.Editor
             PlayerSettings.SetGraphicsAPIs(BuildTarget.WebGL, new[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 });
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
             PlayerSettings.WebGL.decompressionFallback = false;
-            PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.None;
+            PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.FullWithoutStacktrace;
             PlayerSettings.WebGL.threadsSupport = false;
             PlayerSettings.WebGL.dataCaching = true;
             PlayerSettings.WebGL.initialMemorySize = 128;

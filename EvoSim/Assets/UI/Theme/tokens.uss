@@ -70,6 +70,12 @@
     --evo-tooltip-delay-ms: 400px;
     --evo-scrollbar-width: 8px;
     --evo-slider-row-height: 64px;
+    --evo-slider-thumb-size: 16px;
+    --evo-slider-thumb-hover-size: 18px;
+    --evo-tree-row-height: 32px;
+    --evo-tree-min-height: 460px;
+    --evo-event-chip-size: 20px;
+    --evo-event-chip-gap: 4px;
     --evo-legend-row-height: 28px;
     --evo-reference-width: 1920px;
     --evo-reference-height: 1080px;

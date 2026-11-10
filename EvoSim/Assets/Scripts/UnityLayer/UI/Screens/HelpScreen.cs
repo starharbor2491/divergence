@@ -94,7 +94,6 @@ namespace Evo.UnityLayer
             Tooltips.Hide();
             IsOpen = true;
             this.Show(true);
-            BringToFront();
         }
 
         public void Close()

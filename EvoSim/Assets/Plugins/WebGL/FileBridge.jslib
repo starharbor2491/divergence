@@ -1,57 +1,104 @@
-// Browser side of Evo.UnityLayer.FileBridge: download bytes as a file, and pick a text file from disk.
-//
-// Browsers only open a file dialog during a real user gesture. Unity handles the pointer event a frame later,
-// so the Load button arms the picker on pointer down (ArmPicker) and the browser's own click event opens the dialog.
-// PickFile, called later by Unity, only registers where to send the result unless the dialog is not open yet.
+// Browser-native clicks are checked against current Load-button regions. Unity's
+// frame-delayed pointer events must not arm an unrelated later document click.
 mergeInto(LibraryManager.library, {
-
+    $EvoRunExit: {
+        warn: function (event) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    },
+    ProtectRunOnExit: function (enabled) {
+        window.removeEventListener('beforeunload', EvoRunExit.warn);
+        if (enabled) window.addEventListener('beforeunload', EvoRunExit.warn);
+    },
+    ProtectRunOnExit__deps: ['$EvoRunExit'],
     $EvoPicker: {
-        armedAt: 0,
-        openedAt: 0,
-        accept: '.json',
-        deliver: null,
+        regions: {},
+        press: null,
+        released: null,
+        active: null,
+        nextId: 0,
         listening: false,
+        canvas: function () { return Module.canvas || document.getElementById('unity-canvas'); },
+        inside: function (region, event) {
+            var bounds = EvoPicker.canvas().getBoundingClientRect();
+            var x = (event.clientX - bounds.left) / bounds.width;
+            var y = (event.clientY - bounds.top) / bounds.height;
+            return region && region.enabled && x >= region.x && y >= region.y &&
+                x <= region.x + region.width && y <= region.y + region.height;
+        },
+        send: function (method, value) {
+            if (typeof SendMessage === 'function') SendMessage('EvoFileBridge', method, value);
+            else if (Module.SendMessage) Module.SendMessage('EvoFileBridge', method, value);
+            else if (window.unityInstance) window.unityInstance.SendMessage('EvoFileBridge', method, value);
+        },
         ensure: function () {
             if (EvoPicker.listening) return;
             EvoPicker.listening = true;
-            document.addEventListener('click', function () {
-                if (EvoPicker.armedAt > 0 && performance.now() - EvoPicker.armedAt < 3000) {
-                    EvoPicker.armedAt = 0;
-                    EvoPicker.open();
-                }
+            document.addEventListener('pointerdown', function (e) {
+                EvoPicker.press = EvoPicker.released = null;
+                if (e.button !== 0 || e.target !== EvoPicker.canvas() || EvoPicker.active) return;
+                Object.keys(EvoPicker.regions).some(function (slot) {
+                    if (!EvoPicker.inside(EvoPicker.regions[slot], e)) return false;
+                    EvoPicker.press = { slot: slot, pointer: e.pointerId };
+                    return true;
+                });
+            }, true);
+            document.addEventListener('pointerup', function (e) {
+                var press = EvoPicker.press;
+                EvoPicker.press = null;
+                EvoPicker.released = press && press.pointer === e.pointerId && e.button === 0 &&
+                    EvoPicker.inside(EvoPicker.regions[press.slot], e) ? press : null;
+            }, true);
+            document.addEventListener('pointercancel', function () {
+                EvoPicker.press = EvoPicker.released = null;
+            }, true);
+            document.addEventListener('click', function (e) {
+                var press = EvoPicker.released;
+                EvoPicker.press = EvoPicker.released = null;
+                if (!press || e.target !== EvoPicker.canvas() || EvoPicker.active ||
+                    !EvoPicker.inside(EvoPicker.regions[press.slot], e)) return;
+                var op = { id: ++EvoPicker.nextId, input: null, reader: null };
+                EvoPicker.active = op;
+                EvoPicker.send('OnPickerRequested', press.slot + ':' + op.id);
+                if (EvoPicker.active === op) EvoPicker.open(op);
             }, true);
         },
-        open: function () {
-            EvoPicker.openedAt = performance.now();
+        finish: function (op, status, text) {
+            if (EvoPicker.active !== op) return;
+            EvoPicker.active = null;
+            if (op.input && op.input.parentNode) op.input.parentNode.removeChild(op.input);
+            EvoPicker.send('OnFilePicked', JSON.stringify({ id: op.id, status: status, text: text || '' }));
+        },
+        open: function (op) {
             var input = document.createElement('input');
+            op.input = input;
             input.type = 'file';
-            input.accept = EvoPicker.accept;
+            input.accept = '.json,application/json';
             input.style.display = 'none';
-            var finish = function (text) {
-                if (input.parentNode) input.parentNode.removeChild(input);
-                if (EvoPicker.deliver) EvoPicker.deliver(text);
-            };
             input.addEventListener('change', function () {
                 var file = input.files && input.files[0];
-                if (!file) { finish(''); return; }
+                if (!file) { EvoPicker.finish(op, 'cancelled', ''); return; }
+                // Same 64 MiB import limit as SnapshotValidation, before allocating a reader.
+                if (file.size > 64 * 1024 * 1024) { EvoPicker.finish(op, 'error', ''); return; }
                 var reader = new FileReader();
-                reader.onload = function () { finish(String(reader.result)); };
-                reader.onerror = function () { finish(''); };
-                reader.readAsText(file);
+                op.reader = reader;
+                reader.onload = function () { EvoPicker.finish(op, 'success', String(reader.result)); };
+                reader.onerror = function () { EvoPicker.finish(op, 'error', ''); };
+                try { reader.readAsText(file); }
+                catch (e) { EvoPicker.finish(op, 'error', ''); }
             });
-            input.addEventListener('cancel', function () { finish(''); });
+            input.addEventListener('cancel', function () { EvoPicker.finish(op, 'cancelled', ''); });
             document.body.appendChild(input);
-            input.click();
+            try { input.click(); }
+            catch (e) { EvoPicker.finish(op, 'error', ''); }
         }
     },
 
     DownloadBytes: function (namePtr, mimePtr, dataPtr, length) {
-        var name = UTF8ToString(namePtr);
-        var mime = UTF8ToString(mimePtr);
-        var bytes = new Uint8Array(HEAPU8.buffer, dataPtr, length).slice();
-        var blob = new Blob([bytes], { type: mime });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
+        var name = UTF8ToString(namePtr), mime = UTF8ToString(mimePtr);
+        var blob = new Blob([new Uint8Array(HEAPU8.buffer, dataPtr, length).slice()], { type: mime });
+        var url = URL.createObjectURL(blob), a = document.createElement('a');
         a.href = url;
         a.download = name;
         a.style.display = 'none';
@@ -60,33 +107,18 @@ mergeInto(LibraryManager.library, {
         document.body.removeChild(a);
         setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
     },
-
-    PixelRatio: function () {
-        return window.devicePixelRatio || 1;
-    },
-
-    ArmPicker: function (acceptPtr) {
+    PixelRatio: function () { return window.devicePixelRatio || 1; },
+    PickerRegion: function (slot, x, y, width, height, enabled) {
         EvoPicker.ensure();
-        EvoPicker.accept = UTF8ToString(acceptPtr);
-        EvoPicker.armedAt = performance.now();
+        EvoPicker.regions[slot] = { x: x, y: y, width: width, height: height, enabled: !!enabled };
     },
-    ArmPicker__deps: ['$EvoPicker'],
-
-    PickFile: function (objectPtr, methodPtr, acceptPtr) {
-        EvoPicker.ensure();
-        var objectName = UTF8ToString(objectPtr);
-        var method = UTF8ToString(methodPtr);
-        EvoPicker.accept = UTF8ToString(acceptPtr);
-        EvoPicker.deliver = function (text) {
-            var send = (typeof SendMessage === 'function') ? SendMessage
-                : (typeof Module !== 'undefined' && Module.SendMessage) ? Module.SendMessage
-                : (window.unityInstance && window.unityInstance.SendMessage) ? function (o, m, v) { window.unityInstance.SendMessage(o, m, v); }
-                : null;
-            if (send) send(objectName, method, text);
-        };
-        if (EvoPicker.openedAt > 0 && performance.now() - EvoPicker.openedAt < 3000) return;
-        EvoPicker.armedAt = 0;
-        EvoPicker.open();
+    PickerRegion__deps: ['$EvoPicker'],
+    CancelPicker: function (id) {
+        var op = EvoPicker.active;
+        if (!op || op.id !== id) return;
+        EvoPicker.active = null;
+        if (op.reader && op.reader.readyState === 1) op.reader.abort();
+        if (op.input && op.input.parentNode) op.input.parentNode.removeChild(op.input);
     },
-    PickFile__deps: ['$EvoPicker']
+    CancelPicker__deps: ['$EvoPicker']
 });

@@ -20,6 +20,8 @@ namespace Evo.UnityLayer
         readonly EventDialog eventDialog;
         readonly HelpScreen help;
         readonly ExtinctionOverlay extinction;
+        readonly RunActionDialog confirm = new RunActionDialog();
+        readonly VisualElement loading;
         readonly VisualElement tooSmall;
         readonly Label placementText;
         readonly IconElement placementIcon;
@@ -29,7 +31,7 @@ namespace Evo.UnityLayer
 
         public VisualElement WorldRegion { get { return worldRegion; } }
         public bool WindowTooSmall { get; private set; }
-        public bool ModalOpen { get { return eventDialog.IsOpen || help.IsOpen || EventsMenu.IsOpen || app.Mode == AppMode.Extinct; } }
+        public bool ModalOpen { get { return confirm.IsOpen || app.Loading || EvoDropdown.IsOpen || eventDialog.IsOpen || help.IsOpen || EventsMenu.IsOpen || app.Mode == AppMode.Extinct; } }
 
         public UiRoot(AppController app, VisualElement docRoot)
         {
@@ -113,6 +115,21 @@ namespace Evo.UnityLayer
             tsMessage.style.maxWidth = 640;
             tooSmall.Add(tsMessage);
             tooSmall.Show(false);
+            loading = new VisualElement();
+            loading.Fill();
+            loading.style.backgroundColor = DesignTokens.Scrim;
+            loading.style.alignItems = Align.Center;
+            loading.style.justifyContent = Justify.Center;
+            var loadingCard = Ui.Column();
+            loadingCard.Pad(DesignTokens.Space5);
+            loadingCard.style.backgroundColor = DesignTokens.Bg1;
+            loadingCard.Add(Ui.Body("Loading Run. Choose a file, or cancel."));
+            var cancelLoad = new EvoButton(ButtonKind.Secondary, "Cancel", null, "confirm-cancel");
+            cancelLoad.style.marginTop = DesignTokens.Space4;
+            cancelLoad.Clicked += app.CancelLoad;
+            loadingCard.Add(cancelLoad);
+            loading.Add(loadingCard);
+            loading.Show(false);
 
             root.Add(setup);
             root.Add(runLayer);
@@ -120,6 +137,8 @@ namespace Evo.UnityLayer
             root.Add(eventDialog);
             root.Add(help);
             root.Add(extinction);
+            root.Add(confirm);
+            root.Add(loading);
             root.Add(tooSmall);
             root.Add(Ui.Overlay);
             Tooltips.Init(Ui.Overlay);
@@ -171,6 +190,7 @@ namespace Evo.UnityLayer
         // ------------------------------------------------------------ mode changes
         void ShowSetup()
         {
+            CloseAll();
             setup.LoadFromDraft();
             setup.Show(true);
             runLayer.Show(false);
@@ -180,6 +200,7 @@ namespace Evo.UnityLayer
 
         public void OnRunStarted()
         {
+            CloseAll();
             setup.Show(false);
             runLayer.Show(true);
             sidePanel.BindRun(app.Sim);
@@ -193,14 +214,21 @@ namespace Evo.UnityLayer
 
         public void OnModeChanged()
         {
+            ChartElement.HideReadouts();
             if (app.Mode == AppMode.Setup) { ShowSetup(); return; }
             setup.Show(false);
             runLayer.Show(true);
-            if (app.Mode == AppMode.Extinct) extinction.Open(app.Sim);
+            if (app.Mode == AppMode.Extinct)
+            {
+                EvoDropdown.CloseOpen();
+                EventsMenu.Close();
+                Tooltips.Hide();
+                extinction.Open(app.Sim);
+            }
             else extinction.Close();
         }
 
-        public void OnPanelToggled() { sidePanel.Show(app.PanelOpen); }
+        public void OnPanelToggled() { EvoDropdown.CloseOpen(); ChartElement.HideReadouts(); sidePanel.Show(app.PanelOpen); }
 
         public void OnPlacementChanged()
         {
@@ -213,7 +241,7 @@ namespace Evo.UnityLayer
         }
 
         // ------------------------------------------------------------ dialogs
-        public void OpenHelp() { help.Open(); }
+        public void OpenHelp() { CloseAll(); ChartElement.HideReadouts(); help.Open(); }
 
         public void SelectTab(int index) { sidePanel.Select(index); }
 
@@ -223,25 +251,37 @@ namespace Evo.UnityLayer
             EventsMenu.Close();
             eventDialog.Close();
             help.Close();
+            confirm.Close();
         }
 
         public void OpenEventDialog(EventKind kind)
         {
             if (app.Sim == null) return;
             eventDialog.Open(kind);
-            eventDialog.BringToFront();
-            Ui.Overlay.BringToFront();
+            EvoDropdown.CloseOpen();
+            ChartElement.HideReadouts();
         }
 
         /// <summary>Escape closes the topmost popup. Returns true when something was closed.</summary>
         public bool HandleEscape()
         {
+            if (app.Loading) { app.CancelLoad(); return true; }
+            if (confirm.IsOpen) { confirm.Close(); return true; }
             if (EvoDropdown.CloseOpen()) return true;
             if (EventsMenu.IsOpen) { EventsMenu.Close(); return true; }
             if (eventDialog.IsOpen) { eventDialog.Close(); return true; }
             if (help.IsOpen) { help.Close(); return true; }
             return false;
         }
+
+        public void ConfirmRunAction(string title, string action, System.Action discard, System.Action cancelled)
+        {
+            CloseAll();
+            ChartElement.HideReadouts();
+            confirm.Open(title, action, discard, app.SaveRun, cancelled);
+        }
+
+        public void OnLoadingChanged() { loading.Show(app.Loading); }
 
         // ------------------------------------------------------------ toast
         public void Toast(string status, string text, float seconds = 4f)
@@ -284,7 +324,9 @@ namespace Evo.UnityLayer
             {
                 WindowTooSmall = small;
                 tooSmall.Show(small);
+                if (small) { EvoDropdown.CloseOpen(); EventsMenu.Close(); Tooltips.Hide(); ChartElement.HideReadouts(); }
             }
+            eventDialog.Tick();
             sidePanel.SetWidthFor(root.layout.width);
             if (toast != null && Time.unscaledTime > toastUntil) { toast.RemoveFromHierarchy(); toast = null; }
             if (app.Mode == AppMode.Setup) return;

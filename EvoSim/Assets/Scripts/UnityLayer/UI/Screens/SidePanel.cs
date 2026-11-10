@@ -52,6 +52,8 @@ namespace Evo.UnityLayer
 
         public void Select(int index)
         {
+            EvoDropdown.CloseOpen();
+            ChartElement.HideReadouts();
             active = index;
             for (int i = 0; i < 4; i++) tabButtons[i].Selected = i == index;
             scroll.Clear();

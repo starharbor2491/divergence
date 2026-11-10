@@ -19,7 +19,7 @@ namespace Evo.Core
     [Serializable]
     public class SpeciesSnap
     {
-        public int Id, ParentId, BirthGeneration, PeakPopulation, CurrentPopulation, EmptyChecks;
+        public int Id, ParentId, BirthGeneration, PeakPopulation, CurrentPopulation, LastPopulation, EmptyChecks;
         public string Name;
         public double BirthTime, ExtinctTime;
         public float[] Trait;
@@ -147,7 +147,7 @@ namespace Evo.Core
                 {
                     Id = r.Id, ParentId = r.ParentId, Name = r.Name, BirthTime = r.BirthTime, BirthGeneration = r.BirthGeneration,
                     ExtinctTime = r.ExtinctTime, PeakPopulation = r.PeakPopulation, CurrentPopulation = r.CurrentPopulation,
-                    EmptyChecks = r.EmptyChecks,
+                    LastPopulation = r.LastPopulation, EmptyChecks = r.EmptyChecks,
                     Trait = (float[])r.Centroid.Trait.Clone(), Weights = (float[])r.Centroid.Weights.Clone()
                 };
             }
@@ -180,9 +180,10 @@ namespace Evo.Core
             return s;
         }
 
-        /// <summary>Rebuilds a Simulation from a snapshot. The caller checks FormatVersion first.</summary>
+        /// <summary>Validates saved state before allocating a World, then rebuilds the Simulation.</summary>
         public static Simulation FromSnapshot(SimSnapshot s)
         {
+            SnapshotValidation.Check(s);
             var sim = new Simulation(s.Setup, s.Params);
             sim.WorldRng.SetState(s.WorldRng);
             sim.SimRng.SetState(s.SimRng);
@@ -234,6 +235,7 @@ namespace Evo.Core
                 {
                     Id = r.Id, ParentId = r.ParentId, Name = r.Name, BirthTime = r.BirthTime, BirthGeneration = r.BirthGeneration,
                     ExtinctTime = r.ExtinctTime, PeakPopulation = r.PeakPopulation, CurrentPopulation = r.CurrentPopulation,
+                    LastPopulation = r.LastPopulation > 0 ? r.LastPopulation : r.CurrentPopulation,
                     EmptyChecks = r.EmptyChecks
                 };
                 Array.Copy(r.Trait, rec.Centroid.Trait, Traits.Count);
@@ -267,6 +269,25 @@ namespace Evo.Core
             sim.Stats.DeathBins = (int[])st.DeathBins.Clone();
             Array.Copy(st.BirthsPerSecond, sim.Stats.BirthsPerSecond, 60);
             Array.Copy(st.DeathsPerSecond, sim.Stats.DeathsPerSecond, 60);
+            // v1 saves did not retain the last nonzero population. Recover the
+            // last recorded count where possible, never substitute a peak.
+            foreach (SpeciesRecord record in sim.Species.Records)
+            {
+                if (record.LastPopulation > 0) continue;
+                for (int i = sim.Stats.Samples.Count - 1; i >= 0 && record.LastPopulation == 0; i--)
+                {
+                    Sample sample = sim.Stats.Samples[i];
+                    for (int k = 0; k < sample.SpeciesIds.Length; k++)
+                        if (sample.SpeciesIds[k] == record.Id && sample.SpeciesPops[k] > 0) record.LastPopulation = sample.SpeciesPops[k];
+                }
+            }
+            if (sim.Extinct && sim.Cells.AliveCount == 0 && sim.Species.LivingCount > 0)
+            {
+                sim.Species.Finish(sim.Time);
+                int last = sim.Stats.Samples.Count - 1;
+                if (last >= 0 && sim.Stats.Samples[last].Time == (float)sim.Time) sim.Stats.Samples.RemoveAt(last);
+                sim.Stats.Sample(sim.Cells, sim.Species, sim.Time);
+            }
             return sim;
         }
 
@@ -276,12 +297,36 @@ namespace Evo.Core
         public ulong StateHash()
         {
             var h = new Hasher();
+            h.Add(Setup.SeedText); h.Add(Setup.FoodAbundance); h.Add(Setup.TemperatureRange);
+            h.Add(Setup.ZoneScale); h.Add(Setup.ToxinLevel); h.Add(Setup.MutationRate);
+            h.Add(P.WorldWidth); h.Add(P.WorldHeight); h.Add(P.Dt); h.Add(P.FounderCount); h.Add(P.MaxCells);
+            h.Add(P.PoolCapacity); h.Add(P.FounderStartEnergy);
+            h.Add(P.FoodEnergy); h.Add(P.FoodRadius); h.Add(P.FoodRate); h.Add(P.MaxFood); h.Add(P.InitialFood);
+            h.Add(P.FoodNoiseScale); h.Add(P.FoodSpawnTries);
+            h.Add(P.ToxinHalfLifeCloud); h.Add(P.ToxinHalfLifeSpill); h.Add(P.MaxToxin); h.Add(P.ToxinDamping);
+            h.Add(P.ToxinDrift); h.Add(P.ToxinRc); h.Add(P.ToxinG); h.Add(P.ToxinAccelCap);
+            h.Add(P.ToxinMinStrength); h.Add(P.ToxinSenseStrength);
+            h.Add(P.BaseSize); h.Add(P.BaseSense); h.Add(P.BaseResist); h.Add(P.BaseTolerance); h.Add(P.MoveCost);
+            h.Add(P.AgeStart); h.Add(P.AgeCost); h.Add(P.TempStressCost); h.Add(P.ToxinCost); h.Add(P.ToxinExposure);
+            h.Add(P.TurnRate); h.Add(P.DrainTimeConstant); h.Add(P.MaxEnergyPerSize);
+            h.Add(P.DietFoodPenalty); h.Add(P.PredationRatio); h.Add(P.PredationMinDiet); h.Add(P.BiteOutputThreshold);
+            h.Add(P.BiteTime); h.Add(P.BiteReach); h.Add(P.PredatorEnergyShare); h.Add(P.PredatorMaxShare);
+            h.Add(P.ParentKeep); h.Add(P.ChildShare); h.Add(P.TraitMutationChance); h.Add(P.TraitMutationSd);
+            h.Add(P.WeightMutationChance); h.Add(P.WeightMutationSd); h.Add(P.BigStepChance); h.Add(P.BigStepFactor);
+            h.Add(P.WeightLimit); h.Add(P.FounderTraitSpread); h.Add(P.FounderWeightSd); h.Add(P.InnateWiring);
+            h.Add(P.SexThreshold); h.Add(P.MateEnergyFraction); h.Add(P.MateCost); h.Add(P.MateChildShare);
+            h.Add(P.MateDistMaxFactor); h.Add(P.MateDistMinFactor);
+            h.Add(P.SpeciesTheta); h.Add(P.SpeciesCheckSeconds); h.Add(P.SpeciesMinGroup);
+            h.Add(P.DistanceTraitWeight); h.Add(P.DistanceBrainWeight); h.Add(P.DistanceBrainDivisor); h.Add(P.CentroidKeep);
+            h.Add(P.SampleSeconds); h.Add(P.MaxSamples); h.Add(P.DeathBinSeconds); h.Add(P.TraitBinHalfWindow);
+            h.Add(P.MaxActiveEvents); h.Add(P.HeatRampUp); h.Add(P.HeatRampDown);
+            h.Add(P.FamineRemoveShare); h.Add(P.FamineRejectShare); h.Add(P.BloomRate); h.Add(P.SpillParticlesPer10Radius);
             h.Add(StepCount);
             h.Add(NextCellId);
             h.Add(Extinct ? 1 : 0);
             h.Add(foodAcc);
-            AddRng(h, WorldRng.GetState());
-            AddRng(h, SimRng.GetState());
+            AddRng(ref h, WorldRng.GetState());
+            AddRng(ref h, SimRng.GetState());
 
             h.Add(FoodCount);
             for (int i = 0; i < FoodCount; i++) { h.Add(FoodX[i]); h.Add(FoodY[i]); }
@@ -298,6 +343,7 @@ namespace Evo.Core
                 h.Add(c.X); h.Add(c.Y); h.Add(c.Heading); h.Add(c.Energy); h.Add(c.Age);
                 h.Add(c.DrainBase); h.Add(c.DrainTemperature); h.Add(c.DrainToxin); h.Add(c.DrainAge);
                 h.Add(c.BiteTimer); h.Add(c.BiteTargetId); h.Add(c.MatedStep);
+                h.Add(c.OutTurn); h.Add(c.OutThrust); h.Add(c.OutBite); h.Add(c.OutMate);
                 for (int t = 0; t < Traits.Count; t++) h.Add(c.G.Trait[t]);
                 for (int w = 0; w < BrainLayout.WeightCount; w++) h.Add(c.G.Weights[w]);
             }
@@ -307,16 +353,22 @@ namespace Evo.Core
                 ActiveEvent e = Events.Active[i];
                 h.Add((int)e.Spec.Kind); h.Add(e.Spec.X); h.Add(e.Spec.Y); h.Add(e.Spec.Radius);
                 h.Add(e.Spec.Intensity); h.Add(e.Spec.Duration); h.Add(e.Spec.WholeWorld ? 1 : 0);
-                h.Add(e.Age); h.Add(e.Accumulator);
+                h.Add(e.Age); h.Add(e.Accumulator); h.Add(e.PlacedTime);
             }
             h.Add(Events.Log.Count);
+            foreach (EventRecord e in Events.Log)
+            {
+                h.Add(e.Time); h.Add((int)e.Kind); h.Add(e.X); h.Add(e.Y); h.Add(e.Radius);
+                h.Add(e.Intensity); h.Add(e.Duration); h.Add(e.WholeWorld ? 1 : 0);
+            }
             h.Add(Species.NextId);
             h.Add(Species.Records.Count);
             for (int i = 0; i < Species.Records.Count; i++)
             {
                 SpeciesRecord r = Species.Records[i];
                 h.Add(r.Id); h.Add(r.ParentId); h.Add(r.BirthTime); h.Add(r.ExtinctTime);
-                h.Add(r.PeakPopulation); h.Add(r.CurrentPopulation); h.Add(r.EmptyChecks);
+                h.Add(r.Name); h.Add(r.BirthGeneration);
+                h.Add(r.PeakPopulation); h.Add(r.CurrentPopulation); h.Add(r.LastPopulation); h.Add(r.EmptyChecks);
                 for (int t = 0; t < Traits.Count; t++) h.Add(r.Centroid.Trait[t]);
                 for (int w = 0; w < BrainLayout.WeightCount; w++) h.Add(r.Centroid.Weights[w]);
             }
@@ -325,15 +377,24 @@ namespace Evo.Core
             {
                 h.Add(Species.Pending[i].Size);
                 for (int t = 0; t < Traits.Count; t++) h.Add(Species.Pending[i].Centroid.Trait[t]);
+                for (int w = 0; w < BrainLayout.WeightCount; w++) h.Add(Species.Pending[i].Centroid.Weights[w]);
             }
             h.Add(Stats.Samples.Count);
+            foreach (Sample s in Stats.Samples)
+            {
+                h.Add(s.Time); h.Add(s.Count); h.Add(s.MeanGeneration); h.Add(s.MaxGeneration); h.Add(s.Births);
+                h.Add(s.Deaths); h.Add(s.LivingSpecies); h.Add(s.ExtinctSpecies); h.Add(s.SexualFraction);
+                h.Add(s.TraitMean); h.Add(s.TraitSd); h.Add(s.Bins); h.Add(s.SpeciesIds); h.Add(s.SpeciesPops);
+            }
             h.Add(Stats.IntervalSteps);
             h.Add(Stats.TotalBirths);
-            for (int i = 0; i < DeathCauses.Count; i++) h.Add(Stats.TotalDeaths[i]);
+            h.Add(Stats.TotalDeaths); h.Add(Stats.MaxGenerationEver); h.Add(Stats.PeakCells);
+            h.Add(Stats.DeathBinCount); h.Add(Stats.DeathBins); h.Add(Stats.RollIndex);
+            h.Add(Stats.SecBirths); h.Add(Stats.SecDeaths); h.Add(Stats.BirthsPerSecond); h.Add(Stats.DeathsPerSecond);
             return h.Value;
         }
 
-        static void AddRng(Hasher h, RngState r)
+        static void AddRng(ref Hasher h, RngState r)
         {
             h.Add(r.S0); h.Add(r.S1); h.Add(r.S2); h.Add(r.S3);
             h.Add(r.HasSpare ? 1 : 0); h.Add(r.Spare);
@@ -360,6 +421,9 @@ namespace Evo.Core
             public void Add(long x) { Mix(unchecked((ulong)x)); }
             public void Add(float x) { Mix(unchecked((ulong)(uint)BitConverter.SingleToInt32Bits(x))); }
             public void Add(double x) { Mix(unchecked((ulong)BitConverter.DoubleToInt64Bits(x))); }
+            public void Add(string x) { Add(x == null ? -1 : x.Length); if (x != null) foreach (char c in x) Add((int)c); }
+            public void Add(int[] x) { Add(x.Length); foreach (int v in x) Add(v); }
+            public void Add(float[] x) { Add(x.Length); foreach (float v in x) Add(v); }
         }
     }
 }

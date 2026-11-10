@@ -34,7 +34,8 @@ namespace Evo.UnityLayer
         public static Simulation FromJson(string json, out string error)
         {
             error = null;
-            if (string.IsNullOrEmpty(json) || json.TrimStart().Length == 0 || json.TrimStart()[0] != '{')
+            if (string.IsNullOrEmpty(json) || json.Length > SnapshotValidation.MaxJsonCharacters ||
+                json.TrimStart().Length == 0 || json.TrimStart()[0] != '{')
             {
                 error = UiText.LoadFailedGeneric;
                 return null;

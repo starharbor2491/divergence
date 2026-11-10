@@ -84,7 +84,7 @@ namespace Evo.UnityLayer
             if (dragging && mouse.leftButton.wasReleasedThisFrame)
             {
                 dragging = false;
-                if (!moved) Click(pos);
+                if (!moved && !blocked) Click(pos);
             }
         }
 
@@ -106,7 +106,7 @@ namespace Evo.UnityLayer
         {
             WorldView view = app.WorldView;
             bool armed = app.Armed != null && !app.Armed.WholeWorld;
-            if (armed && !blocked)
+            if (armed && !blocked && app.WorldContains(app.Cam.ScreenToWorld(pos)))
             {
                 view.PreviewActive = true;
                 view.PreviewCentre = app.Cam.ScreenToWorld(pos);

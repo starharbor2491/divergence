@@ -14,6 +14,7 @@ namespace Evo.Core
         public double ExtinctTime = -1;   // negative while alive
         public int PeakPopulation;
         public int CurrentPopulation;
+        public int LastPopulation;     // last nonzero count observed at a Species check
         public int EmptyChecks;
         public float ColorR = 1f, ColorG = 1f, ColorB = 1f;
         public readonly Genome Centroid = new Genome();
@@ -73,6 +74,7 @@ namespace Evo.Core
             SetColor(first);
             first.CurrentPopulation = cells.AliveCount;
             first.PeakPopulation = cells.AliveCount;
+            first.LastPopulation = cells.AliveCount;
             Records.Add(first);
         }
 
@@ -116,7 +118,7 @@ namespace Evo.Core
         public void Check(CellPool cells, double time)
         {
             int n = cells.AliveCount;
-            if (n == 0) return;
+            if (n == 0) { Finish(time); return; }
 
             if (Records.Count == 0)
             {
@@ -256,8 +258,23 @@ namespace Evo.Core
                     continue;
                 }
                 s.EmptyChecks = 0;
+                s.LastPopulation = s.CurrentPopulation;
                 UpdateCentroid(cells, s);
             }
+        }
+
+        /// <summary>No future check is possible after terminal extinction.</summary>
+        public void Finish(double time)
+        {
+            foreach (SpeciesRecord s in Records)
+            {
+                if (s.Extinct) continue;
+                if (s.CurrentPopulation > 0) s.LastPopulation = s.CurrentPopulation;
+                s.CurrentPopulation = 0;
+                s.EmptyChecks = 2;
+                s.ExtinctTime = time;
+            }
+            Pending.Clear();
         }
 
         void UpdateCentroid(CellPool cells, SpeciesRecord s)

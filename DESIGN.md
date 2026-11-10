@@ -449,14 +449,20 @@ Style: plain sentences, present tense, no exclamation marks, no emoji, units giv
 | `speed-4` | Speed 10x | Runs at ten times normal speed. On slow computers the real speed may be lower. Key: 4. |
 | `events` | Events | Places a heat wave, ice age, famine, food bloom or toxin spill in the World. |
 | `temperature-tint` | Temperature tint | Shows or hides the colour overlay for Temperature: blue is cold, red is hot. Key: T. |
-| `save` | Save run | Downloads this Run as a file you can load later, even in another browser. |
-| `load` | Load run | Loads a Run from a saved file and replaces the current Run. |
-| `csv` | Export CSV | Downloads the recorded Trait and Species data as two CSV files. |
-| `screenshot` | Screenshot | Downloads a PNG image of the window. |
+| `save` | Save run | Requests a download of this Run for loading later. Check your browser's downloads before discarding it. |
+| `load` | Load run | Opens a saved Run file. A valid file replaces the current Run only after confirmation. |
+| `csv` | Export CSV | Requests two CSV downloads for recorded Trait and Species data. Your browser may ask permission for multiple downloads. |
+| `screenshot` | Screenshot | Requests a PNG download of the window. Check your browser's downloads for the file. |
 | `help` | How it works | Opens the Help screen. |
 | `panel` | Side panel | Shows or hides the charts. Key: Tab. |
-| `home` | Menu | Returns to the setup screen. The current Run is discarded unless you saved it. |
+| `home` | Menu | Opens a confirmation before returning to setup and discarding this Run. |
 | `random-seed` | New random seed | Fills the Seed field with a random code. |
+| `restart` | Restart | Opens a confirmation before replacing this Run with a new one using the same Seed and settings. |
+| `close` | Close | Closes this window. Key: Escape. |
+| `inspector-close` | Close | Stops inspecting this Cell. Key: Escape. |
+| `confirm-cancel` | Cancel | Keeps the current Run without discarding or replacing it. Key: Escape. |
+| `confirm-discard` | Discard | Discards the current Run and continues the chosen action. Check that any requested save is in your browser's downloads first. |
+| `confirm-save` | Save | Requests a Run download and keeps the current Run. Check your browser's downloads before choosing Discard; the app cannot confirm a disk write. |
 
 ### Setup
 | Id | Name | Text |
@@ -478,12 +484,12 @@ Style: plain sentences, present tense, no exclamation marks, no emoji, units giv
 | `tab-tree` | Tree | Shows which Species split from which, and when. |
 | `tab-stats` | Stats | Shows live counts and why Cells die. |
 | `trait-select` | Trait | Chooses which Trait the charts show. |
-| `axis-switch` | X axis | Plots time in seconds, or the mean Generation of the living Cells. |
+| `axis-switch` | X axis | Plots time in seconds, or the actual mean Generation of living Cells. The mean can decrease as the population changes, so the line can turn back. |
 | `chart-trait-mean` | Mean and spread | The line is the average value of the Trait. The shaded band is one standard deviation either side. |
 | `chart-trait-frequency` | Frequency | Shows what share of Cells has each range of the Trait. Darker bins are lower values. |
-| `chart-species` | Species over time | Each colour is one Species. The height of a band is its population. |
+| `chart-species` | Species over time | Band height is population for each of the twenty Species with highest historical peaks. Other combines the rest; hover identifies the plotted layers. |
 | `chart-tree` | Family tree | Each line is a Species from when it first appeared to when it died out. Branches show where a Species split off. |
-| `chart-deaths` | Deaths by cause | Counts of Cells that died in each 10 second period, by cause. |
+| `chart-deaths` | Deaths by cause | Shows deaths by cause in 10-second bins from the latest ten minutes. Legend totals count deaths over the whole Run. |
 | `event-marker` | Event marker | Marks when an Event happened. H heat wave, I ice age, F famine, B food bloom, T toxin spill. |
 
 ### Events
@@ -494,34 +500,67 @@ Style: plain sentences, present tense, no exclamation marks, no emoji, units giv
 | `event-famine` | Famine | Removes most Food inside the circle and slows new Food there for a while. |
 | `event-food-bloom` | Food bloom | Adds extra Food inside the circle for a while. |
 | `event-toxin-spill` | Toxin spill | Releases Toxin inside the circle. It spreads slowly and fades. |
-| `event-radius` | Radius | The size of the area affected, in World units. |
+| `event-radius` | Radius | Radius in World units. For a toxin spill it also sets the requested particle count; Whole World changes placement, not quantity. |
+| `event-toxin-amount` | Toxin quantity | By default, radius requests 30 Toxin particles per World unit: 150 to 1800 for radius 5 to 60. Remaining global capacity can reduce the actual count; Whole World changes positions, not quantity. |
 | `event-intensity` | Intensity | How far Temperature moves from normal at the centre. |
 | `event-duration` | Duration | How long the Event lasts at full strength, in seconds. |
 | `event-whole-world` | Whole World | Applies the Event everywhere instead of in one place. |
 | `event-place` | Place | Closes this window. Then click the World to place the Event. |
+| `event-apply` | Apply | Applies the Event to the whole World at once. |
+| `event-cancel` | Cancel | Closes this window without placing an Event. Key: Escape. |
+
+### Trait definitions
+`UiText.TraitIds` lists these ten ids in Trait index order (0 to 9). `UiText.TraitTip(int trait)` returns the title and shared meaning, units and trade-off; an invalid index uses `inspect-trait`.
+
+| Id | Name | Text |
+|---|---|---|
+| `trait-size` | Size | Relative size, 0.50 to 3.00; radius is half this value in World units. Larger Cells store more energy and can eat smaller Cells, but cost more energy to sustain and move. |
+| `trait-speed` | Speed | Maximum movement speed, 0.50 to 4.00 World units per second. Faster movement helps reach Food or escape, but movement energy cost rises with speed squared. |
+| `trait-sense` | Sense range | Detection radius for Food, Cells and Toxin, 2.00 to 15.00 World units. A wider range finds things farther away but increases baseline energy cost. |
+| `trait-temperature` | Preferred Temperature | Best-suited Temperature on the 0.00 cold to 1.00 hot scale. Matching the local Temperature avoids stress; mismatches beyond tolerance cost energy. |
+| `trait-tolerance` | Temperature tolerance | Allowed Temperature mismatch without stress, 0.05 to 0.50 on the Temperature scale. Wider tolerance reduces stress in more places but raises baseline energy cost. |
+| `trait-resistance` | Toxin resistance | Unitless resistance, 0.00 to 1.00, reducing Toxin energy drain by up to 90%. Higher resistance protects against Toxin but raises baseline energy cost. |
+| `trait-diet` | Diet | Unitless diet, 0.00 to 1.00: low values favour Food pellets, high values favour eating smaller Cells. Higher values gain more energy from prey but less from Food; predation also needs sufficient size and biting. |
+| `trait-reproduction` | Reproduction threshold | Energy needed to initiate reproduction, 0.50 to 0.95 of maximum energy. A lower threshold allows earlier reproduction but leaves less energy to pass to offspring. |
+| `trait-sexual` | Sexual tendency | Unitless tendency, 0.00 to 1.00: below 0.50 divides alone; at least 0.50 requires a sexual partner. Crossover combines two Genomes, but both parents pay energy and a Cell without a compatible partner waits. |
+| `trait-choosiness` | Choosiness | Unitless partner selectivity, 0.00 to 1.00, used by sexual Cells. Higher values accept only closer Genomes, preserving similarity but reducing the number of compatible partners. |
 
 ### Inspector and legend
 | Id | Name | Text |
 |---|---|---|
 | `inspect-energy` | Energy | The Cell's stored energy and its maximum. It dies at zero. |
 | `inspect-age` | Age | Time since the Cell was born. Old Cells lose extra energy. |
-| `inspect-generation` | Generation | How many births separate this Cell from a Founder. |
+| `inspect-generation` | Generation | Birth depth from a Founder, whose Generation is zero. A sexual child's Generation is one more than the higher parent Generation. |
+| `inspect-parent` | Parent ID | The recorded parent's ID, not a Generation. 'none' means a Founder; sexual births record only the initiating parent's ID. |
 | `inspect-trait` | Trait bar | The Trait value inside its allowed range. The tick marks the Founders' average. |
 | `inspect-brain` | Brain output | What the Cell's Brain is asking it to do now: turn, move, bite. |
 | `legend-species` | Species | Click to highlight this Species' Cells in the World. Click again to clear. |
-| `legend-cause` | Cause of death | The colour used for this cause in the Deaths chart. |
+| `legend-other` | Other | The chart draws the twenty Species with highest peak populations over the Run; all others form Other. Individual living Species rows still highlight their Cells, including Species inside Other. |
+| `legend-cause` | Cause of death | This cause's legend count covers the whole Run, not just the latest ten minutes shown in the chart. |
+| `legend-bin` | Trait range | The range of Trait values that this shade covers. |
+| `stat-readout` | Live count | A live count taken from the current Run. |
+| `stat-sexual-share` | Sexual share | Share of living Cells whose sexual tendency is at least 0.50. This is not the share of births from sexual reproduction. |
+| `temperature-legend` | Temperature legend | Blue is cold and red is hot. The tint is drawn over the World. |
+
+### Download notifications
+A request is not confirmation that a file reached disk. These `UiText` constants are shared message copy.
+
+| Constant | Text |
+|---|---|
+| `DownloadRequested` | Download requested. Check your browser's downloads. |
+| `CsvDownloadRequested` | Two CSV downloads requested. Your browser may ask permission for multiple downloads. |
 
 ### Help screen section text (short form; the same sentences go into the rulebook)
 1. **What this is.** Divergence is a model of natural selection. Cells live in a World with Food, Toxin and varying Temperature. Cells that suit the World survive and reproduce, so their Traits become more common over generations. Over time the population can split into Species.
 2. **Controls.** Drag to move the view. Scroll to zoom. Click a Cell to inspect it. Space pauses. Keys 1 to 4 change speed. F fits the World. T shows Temperature. Tab hides the side panel. Escape cancels or closes.
 3. **Settings.** The Seed fixes the World. Food abundance, Temperature range, zone scale, Toxin level and mutation rate shape it. Presets fill these in. The same Seed and settings always make the same starting World.
 4. **The World.** Temperature varies smoothly from cold to hot. Food appears as pellets, more in some places than others. Toxin is a set of particles that drift, attract each other slightly and fade.
-5. **Traits.** Each Cell inherits ten Traits: size, speed, sense range, preferred Temperature, Temperature tolerance, Toxin resistance, diet, reproduction threshold, and two mating Traits. Each Trait helps in some way and costs energy in another, so no Cell is best everywhere.
-6. **Reproduction.** A Cell divides when it has stored enough energy. The child gets a copy of the Genome with small random changes called mutations. Mutations are how new Traits and new Brains appear.
+5. **Traits.** Each Cell inherits ten Traits: size, speed, sense range, preferred Temperature, Temperature tolerance, Toxin resistance, diet, reproduction threshold, sexual tendency and choosiness. Traits have benefits and trade-offs, so no Cell is best everywhere. Hover a Trait for its meaning, units and trade-off.
+6. **Reproduction.** Below sexual tendency 0.50, a Cell divides at its energy threshold. At 0.50 or above, it needs a sexual partner within sense range with enough energy and mutual acceptance under both Cells' choosiness. Both pay energy; crossover takes each Trait and Brain weight from either parent, then mutation can make small random changes. Without a partner it waits; it never divides alone.
 7. **Species and colours.** Cells begin white. A Cell's colour comes from its Genome, so similar Cells have similar colours. A Species is a group of Cells whose Genomes are close together. A new Species appears when a group drifts far enough from the rest.
-8. **Charts.** Traits shows one Trait over time. Species shows population by Species. Tree shows which Species came from which. Stats shows counts and causes of death.
-9. **Events.** Events change the World while a Run is going. Choose an Event, set its size, then click the World to place it.
-10. **Save and exports.** Save downloads the Run as a file. Load restores it exactly. Export CSV downloads the recorded data. Screenshot downloads an image of the window.
+8. **Charts.** Traits shows one Trait over time or mean Generation, which can decrease as the living population changes. Species shows the twenty Species with highest historical peaks; the rest form Other. Tree shows which Species came from which. Stats shows deaths in the latest ten minutes; legend totals cover the whole Run. Sexual share counts living Cells with sexual tendency at least 0.50, not births.
+9. **Events.** Events change the World while a Run is going. Choose an Event, set its size, then click the World to place it. Whole World applies without placement; for toxin spills, radius still sets quantity.
+10. **Save and exports.** Save requests a Run download. Load restores a valid saved file. Export CSV requests two data files; your browser may ask permission for multiple downloads. Screenshot requests a PNG. Check your browser's downloads; the app cannot confirm files reached disk.
 
 ---
 

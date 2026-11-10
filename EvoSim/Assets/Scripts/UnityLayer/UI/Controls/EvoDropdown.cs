@@ -37,6 +37,8 @@ namespace Evo.UnityLayer
             RegisterCallback<PointerEnterEvent>(e => { hover = true; Refresh(); });
             RegisterCallback<PointerLeaveEvent>(e => { hover = false; Refresh(); });
             RegisterCallback<PointerDownEvent>(e => { if (e.button == 0) { Open(); e.StopPropagation(); } });
+            RegisterCallback<DetachFromPanelEvent>(e => Close());
+            RegisterCallback<GeometryChangedEvent>(e => { if (e.oldRect != e.newRect) Close(); });
             Refresh();
         }
 
@@ -62,6 +64,7 @@ namespace Evo.UnityLayer
         }
 
         static EvoDropdown openInstance;
+        public static bool IsOpen { get { return openInstance != null; } }
 
         /// <summary>Closes the open list, if any. Returns true when one was open (Escape uses this).</summary>
         public static bool CloseOpen()

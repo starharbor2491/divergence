@@ -111,7 +111,7 @@
        "style": "h2"
       },
       {
-       "text": "Each Cell inherits ten Traits: size, speed, sense range, preferred Temperature, Temperature tolerance, Toxin resistance, diet, reproduction threshold, and two mating Traits. Each Trait helps in some way and costs energy in another, so no Cell is best everywhere.",
+       "text": "Each Cell inherits ten Traits: size, speed, sense range, preferred Temperature, Temperature tolerance, Toxin resistance, diet, reproduction threshold, sexual tendency and choosiness. Traits have benefits and trade-offs, so no Cell is best everywhere. Hover a Trait for its meaning, units and trade-off.",
        "style": "body"
       },
       {
@@ -136,7 +136,7 @@
        "style": "h2"
       },
       {
-       "text": "A Cell divides when it has stored enough energy. The child gets a copy of the Genome with small random changes called mutations. Mutations are how new Traits and new Brains appear.",
+       "text": "Below sexual tendency 0.50, a Cell divides at its energy threshold. At 0.50 or above, it needs a sexual partner within sense range with enough energy and mutual acceptance under both Cells' choosiness. Both pay energy; crossover takes each Trait and Brain weight from either parent, then mutation can make small random changes. Without a partner it waits; it never divides alone.",
        "style": "body"
       },
       {
@@ -152,7 +152,7 @@
        "style": "h2"
       },
       {
-       "text": "Traits shows one Trait over time. Species shows population by Species. Tree shows which Species came from which. Stats shows counts and causes of death.",
+       "text": "Traits shows one Trait over time or mean Generation, which can decrease as the living population changes. Species shows the twenty Species with highest historical peaks; the rest form Other. Tree shows which Species came from which. Stats shows deaths in the latest ten minutes; legend totals cover the whole Run. Sexual share counts living Cells with sexual tendency at least 0.50, not births.",
        "style": "body"
       },
       {
@@ -160,7 +160,7 @@
        "style": "h2"
       },
       {
-       "text": "Events change the World while a Run is going. Choose an Event, set its size, then click the World to place it.",
+       "text": "Events change the World while a Run is going. Choose an Event, set its size, then click the World to place it. Whole World applies without placement; for toxin spills, radius still sets quantity.",
        "style": "body"
       },
       {
@@ -168,7 +168,7 @@
        "style": "h2"
       },
       {
-       "text": "Save downloads the Run as a file. Load restores it exactly. Export CSV downloads the recorded data. Screenshot downloads an image of the window.",
+       "text": "Save requests a Run download. Load restores a valid saved file. Export CSV requests two data files; your browser may ask permission for multiple downloads. Screenshot requests a PNG. Check your browser's downloads; the app cannot confirm files reached disk.",
        "style": "body"
       },
       {

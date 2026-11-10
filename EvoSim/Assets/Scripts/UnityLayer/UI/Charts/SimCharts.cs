@@ -18,17 +18,14 @@ namespace Evo.UnityLayer
             Generation = generation;
             Count = samples.Count;
             if (Xs.Length < Count) Xs = new float[Mathf.Max(Count, Xs.Length * 2)];
-            float run = 0f;
             for (int i = 0; i < Count; i++)
             {
-                float v = generation ? samples[i].MeanGeneration : samples[i].Time;
-                run = i == 0 ? v : Mathf.Max(run, v);
-                Xs[i] = run;
+                Xs[i] = generation ? samples[i].MeanGeneration : samples[i].Time;
             }
         }
 
-        public float Min { get { return Count > 0 ? Xs[0] : 0f; } }
-        public float Max { get { return Count > 0 ? Xs[Count - 1] : 1f; } }
+        public float Min { get { float v = Count > 0 ? Xs[0] : 0f; for (int i = 1; i < Count; i++) v = Mathf.Min(v, Xs[i]); return v; } }
+        public float Max { get { float v = Count > 0 ? Xs[0] : 1f; for (int i = 1; i < Count; i++) v = Mathf.Max(v, Xs[i]); return v; } }
 
         public float TimeToX(List<Sample> samples, double t)
         {
@@ -46,6 +43,7 @@ namespace Evo.UnityLayer
 
         public void Bind(Simulation s)
         {
+            InvalidateHover(true);
             sim = s;
             Refresh();
         }
@@ -56,14 +54,17 @@ namespace Evo.UnityLayer
             set { byGeneration = value; Refresh(); }
         }
 
-        public void Refresh()
+        public virtual void Refresh()
         {
+            InvalidateHover();
             if (sim == null) return;
             axis.Build(sim.Stats.Samples, byGeneration);
             SetEvents(sim.Events.Log);
             eventTimeToX = t => axis.TimeToX(sim.Stats.Samples, t);
             Redraw();
         }
+
+        protected override bool IsValidIndex(int index) { return sim != null && index >= 0 && index < axis.Count && index < sim.Stats.Samples.Count; }
 
         protected void SetXAxis()
         {
@@ -123,10 +124,11 @@ namespace Evo.UnityLayer
             float lo = float.MaxValue, hi = float.MinValue;
             for (int i = 0; i < axis.Count; i++)
             {
+                if (samples[i].Count == 0) continue;
                 lo = Mathf.Min(lo, samples[i].TraitMean[trait] - samples[i].TraitSd[trait]);
                 hi = Mathf.Max(hi, samples[i].TraitMean[trait] + samples[i].TraitSd[trait]);
             }
-            if (axis.Count == 0) { lo = Traits.Min[trait]; hi = Traits.Max[trait]; }
+            if (lo == float.MaxValue) { lo = Traits.Min[trait]; hi = Traits.Max[trait]; }
             lo = Mathf.Max(lo, Traits.Min[trait]);
             hi = Mathf.Min(hi, Traits.Max[trait]);
             float pad = Mathf.Max(0.02f * Traits.Range(trait), (hi - lo) * 0.1f);
@@ -141,6 +143,7 @@ namespace Evo.UnityLayer
         {
             var samples = sim.Stats.Samples;
             int n = axis.Count;
+            while (n > 0 && samples[n - 1].Count == 0) n--;
             if (n < 2) return;
             int stride = Stride(n, 700);
             p.fillColor = DesignTokens.WithAlpha(DesignTokens.ChartSeries1, 0.2f);
@@ -174,6 +177,7 @@ namespace Evo.UnityLayer
 
         protected override void DrawHover(Painter2D p, int index)
         {
+            if (!IsValidIndex(index) || sim.Stats.Samples[index].Count == 0) return;
             HoverDot(p, new Vector2(X(axis.Xs[index]), Y(sim.Stats.Samples[index].TraitMean[trait])), DesignTokens.ChartSeries1);
         }
 
@@ -181,6 +185,11 @@ namespace Evo.UnityLayer
         {
             Sample s = sim.Stats.Samples[index];
             title = XTitle(index);
+            if (s.Count == 0)
+            {
+                rows.Add(new ReadoutRow { Name = "No living Cells", Value = "—" });
+                return;
+            }
             rows.Add(new ReadoutRow { Swatch = DesignTokens.ChartSeries1, Name = "mean", Value = Ui.F(s.TraitMean[trait], 2) });
             rows.Add(new ReadoutRow { Name = "standard deviation", Value = Ui.F(s.TraitSd[trait], 2) });
             rows.Add(new ReadoutRow { Name = "cells", Value = Ui.Count(s.Count) });
@@ -194,6 +203,7 @@ namespace Evo.UnityLayer
         protected Color[] layerColors = new Color[0];
         protected string[] layerNames = new string[0];
         protected int layerCount;
+        protected virtual bool OmitEmptyPopulation { get { return false; } }
 
         protected void EnsureLayers(int layers, int samples)
         {
@@ -208,6 +218,8 @@ namespace Evo.UnityLayer
         protected override void DrawData(Painter2D p)
         {
             int n = axis.Count;
+            if (OmitEmptyPopulation)
+                while (n > 0 && sim.Stats.Samples[n - 1].Count == 0) n--;
             if (n < 2 || layerCount == 0) return;
             int stride = Stride(n, 600);
             for (int l = 0; l < layerCount; l++)
@@ -263,6 +275,7 @@ namespace Evo.UnityLayer
     /// <summary>Share of living Cells in each of the six bins of one Trait (DESIGN 5.3).</summary>
     public sealed class TraitFrequencyChart : StackedChart
     {
+        protected override bool OmitEmptyPopulation { get { return true; } }
         int trait;
 
         public int Trait
@@ -312,6 +325,11 @@ namespace Evo.UnityLayer
         {
             Sample s = sim.Stats.Samples[index];
             title = XTitle(index);
+            if (s.Count == 0)
+            {
+                rows.Add(new ReadoutRow { Name = "No living Cells", Value = "—" });
+                return;
+            }
             for (int b = TraitBins.Count - 1; b >= 0; b--)
             {
                 float share = s.Count > 0 ? (float)s.Bins[trait * TraitBins.Count + b] / s.Count : 0f;
@@ -327,11 +345,28 @@ namespace Evo.UnityLayer
         int[] layerIds = new int[MaxLayers + 1];
         readonly Dictionary<int, int> layerOf = new Dictionary<int, int>();
         readonly List<SpeciesRecord> order = new List<SpeciesRecord>();
-
-        protected override void ComputeAxes()
+        public bool HasOther { get { return sim != null && sim.Species.Records.Count > order.Count; } }
+        public bool IsAggregated(int id) { return HasOther && !layerOf.ContainsKey(id); }
+        public int OtherPopulation
         {
-            var samples = sim.Stats.Samples;
-            SetXAxis();
+            get
+            {
+                int count = 0;
+                if (sim != null)
+                    for (int i = 0; i < sim.Cells.AliveCount; i++)
+                        if (IsAggregated(sim.Cells.Alive[i].SpeciesId)) count++;
+                return count;
+            }
+        }
+
+        public override void Refresh()
+        {
+            if (sim != null) SelectSpecies();
+            base.Refresh();
+        }
+
+        void SelectSpecies()
+        {
             // pick the largest 20 by peak population
             order.Clear();
             order.AddRange(sim.Species.Records);
@@ -342,6 +377,13 @@ namespace Evo.UnityLayer
             }
             order.Sort((a, b) => a.Id.CompareTo(b.Id));
             layerOf.Clear();
+            for (int l = 0; l < order.Count; l++) layerOf[order[l].Id] = l;
+        }
+
+        protected override void ComputeAxes()
+        {
+            var samples = sim.Stats.Samples;
+            SetXAxis();
             bool hasOther = sim.Species.Records.Count > order.Count;
             int layers = order.Count + (hasOther ? 1 : 0);
             EnsureLayers(layers, axis.Count);
@@ -379,7 +421,6 @@ namespace Evo.UnityLayer
         {
             Sample s = sim.Stats.Samples[index];
             title = XTitle(index);
-            var pops = new Dictionary<int, int>();
             for (int l = 0; l < layerCount; l++)
             {
                 float lo = l > 0 ? cumulative[l - 1][index] : 0f;
@@ -471,6 +512,8 @@ namespace Evo.UnityLayer
             return Mathf.Clamp(b, 0, bins - 1);
         }
 
+        protected override bool IsValidIndex(int index) { return index >= 0 && index < bins; }
+
         protected override float IndexX(int index) { return X(binX[index] + sim.P.DeathBinSeconds * 0.5f); }
 
         protected override void FillHover(int index, List<ReadoutRow> rows, out string title)
@@ -497,6 +540,14 @@ namespace Evo.UnityLayer
         }
 
         protected override bool UseCrosshair { get { return false; } }
+        protected override bool IsValidIndex(int index) { return index >= 0 && index < rows.Count; }
+
+        public override void Refresh()
+        {
+            if (sim != null)
+                style.height = Mathf.Max(DesignTokens.TreeMinHeight, MarginTop + MarginBottom + sim.Species.Records.Count * DesignTokens.TreeRowHeight);
+            base.Refresh();
+        }
 
         void Walk(SpeciesRecord s, Dictionary<int, List<SpeciesRecord>> children)
         {
@@ -529,8 +580,8 @@ namespace Evo.UnityLayer
             yMin = 0f; yMax = 1f;
             NiceTicks(xMin, xMax, 5, xTicks);
             xFormat = v => TimeTick(v);
-            rowHeight = Mathf.Min(32f, plot.height / Mathf.Max(1, rows.Count));
-            eventTimeToX = null;
+            rowHeight = DesignTokens.TreeRowHeight;
+            eventTimeToX = t => (float)t;
         }
 
         float RowY(int row) { return plot.yMin + rowHeight * (row + 0.5f); }
@@ -564,7 +615,7 @@ namespace Evo.UnityLayer
             for (int i = 0; i < rows.Count; i++)
             {
                 SpeciesRecord s = rows[i];
-                int pop = s.Extinct ? s.PeakPopulation : s.CurrentPopulation;
+                int pop = s.Extinct ? s.LastPopulation : s.CurrentPopulation;
                 float width = Mathf.Lerp(1f, 6f, Mathf.Clamp01(pop / (float)maxPeak));
                 Color c = new Color(s.ColorR, s.ColorG, s.ColorB, 1f);
                 float y = RowY(i);

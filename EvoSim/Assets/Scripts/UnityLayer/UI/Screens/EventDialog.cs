@@ -78,6 +78,7 @@ namespace Evo.UnityLayer
     public sealed class EventDialog : VisualElement
     {
         readonly AppController app;
+        Action refreshState;
         public bool IsOpen { get; private set; }
 
         public EventDialog(AppController app)
@@ -135,6 +136,16 @@ namespace Evo.UnityLayer
             var radius = new EvoSlider("Radius", "event-radius", 5f, 60f, 20f, 1f, v => Mathf.RoundToInt(v) + " units");
             radius.Changed += v => spec.Radius = v;
             dialog.Add(radius);
+            if (kind == EventKind.ToxinSpill)
+            {
+                Label amount = Ui.Caption("");
+                amount.pickingMode = PickingMode.Position;
+                Tooltips.Attach(amount, "event-toxin-amount");
+                Action updateAmount = () => amount.text = Mathf.RoundToInt(app.Sim.P.SpillParticlesPer10Radius * spec.Radius / 10f) + " Toxin particles requested (capacity may limit this).";
+                radius.Changed += v => updateAmount();
+                updateAmount();
+                dialog.Add(amount);
+            }
 
             if (EventInfo.HasIntensity(kind))
             {
@@ -157,13 +168,9 @@ namespace Evo.UnityLayer
             whole.style.marginTop = DesignTokens.Space4;
             dialog.Add(whole);
 
-            bool canPlace = app.Sim != null && app.Sim.CanPlaceEvent(kind);
-            if (!canPlace)
-            {
-                var msg = new Message("status-warning", "Too many Events are active. Wait for one to finish.");
-                msg.style.marginTop = DesignTokens.Space3;
-                dialog.Add(msg);
-            }
+            var msg = new Message("status-warning", "");
+            msg.style.marginTop = DesignTokens.Space3;
+            dialog.Add(msg);
 
             VisualElement buttons = Ui.Row();
             buttons.style.justifyContent = Justify.FlexEnd;
@@ -172,15 +179,15 @@ namespace Evo.UnityLayer
             cancel.Clicked += Close;
             var place = new EvoButton(ButtonKind.Primary, "Place", null, "event-place");
             place.style.marginLeft = DesignTokens.Space2;
-            place.Disabled = !canPlace;
             whole.Changed += v =>
             {
-                radius.Enabled = !v;
+                radius.Enabled = !v || kind == EventKind.ToxinSpill;
                 place.SetText(v ? "Apply" : "Place");
                 place.SetTip(v ? "event-apply" : "event-place");
             };
             place.Clicked += () =>
             {
+                if (app.Sim == null || !app.Sim.CanPlaceEvent(kind)) { Tick(); return; }
                 Close();
                 if (whole.Value) app.ApplyWholeWorld(spec);
                 else app.BeginPlacement(spec);
@@ -188,12 +195,25 @@ namespace Evo.UnityLayer
             buttons.Add(cancel);
             buttons.Add(place);
             dialog.Add(buttons);
+            refreshState = () =>
+            {
+                bool canPlace = app.Sim != null && app.Sim.CanPlaceEvent(kind);
+                place.Disabled = !canPlace;
+                msg.Show(!canPlace);
+                msg.Q<Label>().text = app.Mode == AppMode.Paused
+                    ? "Too many Events are active. Close this dialog and resume the Run so they can finish."
+                    : "Too many Events are active. Wait for one to finish.";
+            };
+            Tick();
         }
+
+        public void Tick() { if (IsOpen && refreshState != null) refreshState(); }
 
         public void Close()
         {
             if (!IsOpen) return;
             IsOpen = false;
+            refreshState = null;
             Tooltips.Hide();
             this.Show(false);
             Clear();

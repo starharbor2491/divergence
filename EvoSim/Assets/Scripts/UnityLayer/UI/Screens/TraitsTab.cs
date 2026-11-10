@@ -20,7 +20,6 @@ namespace Evo.UnityLayer
             VisualElement controls = Ui.Row();
             Label tl = Ui.LabelText("Trait");
             tl.pickingMode = PickingMode.Position;
-            Tooltips.Attach(tl, "trait-select");
             controls.Add(tl);
 
             dropdown = new EvoDropdown("trait-select");
@@ -46,6 +45,12 @@ namespace Evo.UnityLayer
             axis.Add(generationButton);
             controls.Add(axis);
             Add(controls);
+            Label definition = Ui.Caption("");
+            definition.style.marginTop = DesignTokens.Space2;
+            Add(definition);
+            dropdown.Changed += i => definition.text = UiText.TraitTip(i).Body;
+            definition.text = UiText.TraitTip(trait).Body;
+            Tooltips.Attach(tl, () => UiText.TraitTip(trait));
 
             FixedHeight(lineChart, 210);
             Add(Section("Mean and spread", "", "chart-trait-mean", UiText.Body("chart-trait-mean"), lineChart));

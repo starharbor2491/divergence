@@ -104,6 +104,12 @@ namespace Evo.UnityLayer
         public const int TooltipDelayMs = 400;
         public const int ScrollbarWidth = 8;
         public const int SliderRowHeight = 64;
+        public const int SliderThumbSize = 16;
+        public const int SliderThumbHoverSize = 18;
+        public const int TreeRowHeight = 32;
+        public const int TreeMinHeight = 460;
+        public const int EventChipSize = 20;
+        public const int EventChipGap = 4;
         public const int LegendRowHeight = 28;
         public const int ReferenceWidth = 1920;
         public const int ReferenceHeight = 1080;
