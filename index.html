@@ -6,17 +6,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Divergence</title>
     <style>
-      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0E1116; }
-      #unity-canvas { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; display: block; background: #0E1116; outline: none; }
-      #status { position: fixed; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center;
-                font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 15px; color: #A9B2C0; }
-      #bar { width: 240px; height: 4px; background: #2A313D; margin: 12px auto 0 auto; border-radius: 2px; }
-      #fill { width: 0; height: 4px; background: #5E9CF0; border-radius: 2px; }
+      html, body {
+        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+        background: radial-gradient(circle at 50% 42%, #0B2032 0%, #061019 72%);
+      }
+      #unity-canvas {
+        position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
+        display: block; background: #061019; outline: none;
+      }
+      #status {
+        position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        padding: 28px 36px; border-radius: 22px; text-align: center;
+        background: rgba(12, 25, 38, 0.68);
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        box-shadow: 0 20px 48px rgba(2, 8, 15, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        font-family: -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", "Segoe UI", sans-serif;
+        color: #F2F8FD;
+      }
+      #title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 6px; }
+      #message { font-size: 14px; color: #BDD0E2; }
+      #bar {
+        width: 260px; height: 6px; background: rgba(6, 17, 27, 0.65);
+        border: 1px solid rgba(165, 210, 240, 0.16);
+        margin: 16px auto 0 auto; border-radius: 999px; overflow: hidden;
+      }
+      #fill {
+        width: 0; height: 100%;
+        background: linear-gradient(90deg, #24BFA6 0%, #36DFC4 60%, #7CF5E0 100%);
+        border-radius: 999px; transition: width 0.12s ease-out;
+      }
     </style>
   </head>
   <body>
     <canvas id="unity-canvas" tabindex="-1"></canvas>
-    <div id="status"><div id="message">Loading divergence</div><div id="bar"><div id="fill"></div></div></div>
+    <div id="status">
+      <div id="title">Divergence</div>
+      <div id="message">Preparing the living World</div>
+      <div id="bar"><div id="fill"></div></div>
+    </div>
     <script src="Build/WebGL.loader.js"></script>
     <script>
       var statusBox = document.getElementById("status");
@@ -28,7 +56,7 @@
         streamingAssetsUrl: "StreamingAssets",
         companyName: "Yumei",
         productName: "Divergence",
-        productVersion: "1.0.0",
+        productVersion: "1.1.0",
       }, function (progress) {
         document.getElementById("fill").style.width = (progress * 100) + "%";
       }).then(function (instance) {
