@@ -12,10 +12,6 @@ namespace Evo.UnityLayer
         public string Body;
     }
 
-    /// <summary>
-    /// Pure read-only observer of a Simulation that translates real biological events (placed Pressures, speciation splits,
-    /// extinctions, and significant Trait adaptations) into plain-English classroom Field Notes using CONTEXT.md terms.
-    /// </summary>
     public sealed class LiveNarrator
     {
         const int MaxNotes = 12;
@@ -47,17 +43,16 @@ namespace Evo.UnityLayer
             announcedSexual = false;
             checkTimer = 0f;
 
-            Push(0, DesignTokens.Accent,
-                "Founders released",
-                Ui.Count(s.Cells.AliveCount) + " Founder Cells start near white. Mutations shift their Traits and colours over Generations.");
+            Push(0, DesignTokens.AccentText,
+                "Run started",
+                Ui.Count(s.Cells.AliveCount) + " founders begin with near-identical white genomes.");
 
-            // If binding a Run that already has history (loaded Run or synthetic fixture), summarise the latest milestone
             if (s.Species.Records.Count > 1)
             {
                 SpeciesRecord newest = s.Species.Records[s.Species.Records.Count - 1];
                 Push(newest.BirthTime, new Color(newest.ColorR, newest.ColorG, newest.ColorB),
-                    newest.Name + " diverged",
-                    Ui.Count(s.Species.LivingCount) + " living Species now coexist across the World.");
+                    newest.Name + " branched off",
+                    Ui.Count(s.Species.LivingCount) + " living species currently share the water.");
             }
         }
 
@@ -65,7 +60,6 @@ namespace Evo.UnityLayer
         {
             if (sim == null) return;
 
-            // Immediate check for newly placed Events
             while (seenEvents < sim.Events.Log.Count)
             {
                 EventRecord ev = sim.Events.Log[seenEvents++];
@@ -76,30 +70,27 @@ namespace Evo.UnityLayer
             if (checkTimer < 1.0f) return;
             checkTimer = 0f;
 
-            // Speciation splits
             while (seenSpecies < sim.Species.Records.Count)
             {
                 SpeciesRecord sp = sim.Species.Records[seenSpecies++];
                 SpeciesRecord parent = sim.Species.Get(sp.ParentId);
                 string from = parent != null ? " from " + parent.Name : "";
                 Push(sim.Time, new Color(sp.ColorR, sp.ColorG, sp.ColorB),
-                    "Speciation: " + sp.Name,
-                    sp.Name + " split" + from + " after its Genome drifted far enough apart.");
+                    "New lineage: " + sp.Name,
+                    sp.Name + " branched" + from + " as accumulated mutations separated the two groups.");
             }
 
-            // Extinctions
             if (sim.Species.ExtinctCount > seenExtinct)
             {
                 seenExtinct = sim.Species.ExtinctCount;
                 if (!sim.Extinct)
                 {
                     Push(sim.Time, DesignTokens.StatusWarning,
-                        "Lineage extinct",
-                        "A less-suited Species died out while better-adapted Species kept reproducing.");
+                        "Lineage lost",
+                        "One species died out while better-adapted neighbours persisted.");
                 }
             }
 
-            // Trait adaptation & lifestyle milestones
             var samples = sim.Stats.Samples;
             if (samples.Count > 0 && sim.Cells.AliveCount >= 12)
             {
@@ -122,14 +113,13 @@ namespace Evo.UnityLayer
                         float before = announcedMean[bestTrait];
                         float now = latest.TraitMean[bestTrait];
                         announcedMean[bestTrait] = now;
-                        string dir = now > before ? "rose" : "fell";
-                        Push(sim.Time, DesignTokens.Accent,
-                            "Trait shift: " + Traits.Names[bestTrait],
-                            "Average " + Traits.Names[bestTrait].ToLowerInvariant() + " " + dir + " from " + Ui.F(before, 2) + " to " + Ui.F(now, 2) + " as better-suited Cells survived.");
+                        string dir = now > before ? "rose" : "dropped";
+                        Push(sim.Time, DesignTokens.AccentText,
+                            Traits.Names[bestTrait] + " shift",
+                            "Mean " + Traits.Names[bestTrait].ToLowerInvariant() + " " + dir + " from " + Ui.F(before, 2) + " to " + Ui.F(now, 2) + ".");
                     }
                 }
 
-                // Lifestyle emergence
                 int predators = 0, sexual = 0;
                 for (int i = 0; i < sim.Cells.AliveCount; i++)
                 {
@@ -142,42 +132,42 @@ namespace Evo.UnityLayer
                     announcedPredation = true;
                     Push(sim.Time, DesignTokens.WorldPredatorCore,
                         "Predation emerging",
-                        Mathf.RoundToInt(100f * predators / sim.Cells.AliveCount) + "% of Cells evolved high diet Traits and hunt smaller Cells.");
+                        Mathf.RoundToInt(100f * predators / sim.Cells.AliveCount) + "% of living cells now hunt smaller cells.");
                 }
                 if (!announcedSexual && sexual >= Mathf.Max(8, sim.Cells.AliveCount / 5))
                 {
                     announcedSexual = true;
                     Push(sim.Time, DesignTokens.AccentText,
-                        "Sexual reproduction spreading",
-                        Mathf.RoundToInt(100f * sexual / sim.Cells.AliveCount) + "% of Cells now combine Genomes with compatible partners.");
+                        "Sexual reproduction",
+                        Mathf.RoundToInt(100f * sexual / sim.Cells.AliveCount) + "% of living cells now require a compatible partner.");
                 }
             }
         }
 
         void PushEventNote(EventRecord ev)
         {
-            string scope = ev.WholeWorld ? "across the whole World" : "in the target zone";
+            string scope = ev.WholeWorld ? "world-wide" : "in the target area";
             switch (ev.Kind)
             {
                 case EventKind.HeatWave:
-                    Push(ev.Time, DesignTokens.TempHot, "Heat wave active",
-                        "Temperature rose " + scope + ". Warm-suited Cells save energy and reproduce more.");
+                    Push(ev.Time, DesignTokens.TempHot, "Heat wave",
+                        "Local temperature rose " + scope + ", favouring warm-adapted cells.");
                     break;
                 case EventKind.IceAge:
-                    Push(ev.Time, DesignTokens.TempCold, "Ice age active",
-                        "Temperature dropped " + scope + ". Cold-suited Cells hold the survival advantage.");
+                    Push(ev.Time, DesignTokens.TempCold, "Ice age",
+                        "Local temperature dropped " + scope + ", favouring cold-tolerant cells.");
                     break;
                 case EventKind.Famine:
-                    Push(ev.Time, DesignTokens.StatusWarning, "Famine active",
-                        "Food dropped sharply " + scope + ". Efficient Cells with wider sense range endure best.");
+                    Push(ev.Time, DesignTokens.StatusWarning, "Famine",
+                        "Food became scarce " + scope + ", rewarding efficient foraging.");
                     break;
                 case EventKind.FoodBloom:
-                    Push(ev.Time, DesignTokens.WorldFood, "Food bloom active",
-                        "Extra Food appeared " + scope + ", fuelling rapid births and new Mutations.");
+                    Push(ev.Time, DesignTokens.WorldFood, "Food bloom",
+                        "Dense food appeared " + scope + ", accelerating reproduction.");
                     break;
                 case EventKind.ToxinSpill:
-                    Push(ev.Time, DesignTokens.WorldToxin, "Toxin spill released",
-                        "Drifting Toxin drains nearby Cells. Higher Toxin resistance reduces the damage.");
+                    Push(ev.Time, DesignTokens.WorldToxin, "Toxin spill",
+                        "Released toxin cloud " + scope + ", selecting for higher resistance.");
                     break;
             }
         }

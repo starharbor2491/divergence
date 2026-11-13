@@ -80,8 +80,11 @@ namespace Evo.UnityLayer
         {
             sim.StepCount = (long)Math.Ceiling(59 / (double)sim.P.Dt);
             for (int i = 2; i <= 30; i++)
+            {
+                Color hc = Color.HSVToRGB(((i * 0.137f) % 1f), 0.52f, 0.90f);
                 sim.Species.Records.Add(new SpeciesRecord { Id = i, ParentId = i / 2, Name = "Species " + i,
-                    BirthTime = i, PeakPopulation = 200 - i, LastPopulation = 5, ColorR = 0.6f + i * 0.01f, ColorG = 0.8f, ColorB = 0.9f });
+                    BirthTime = i, PeakPopulation = 200 - i, LastPopulation = 5, ColorR = hc.r, ColorG = hc.g, ColorB = hc.b });
+            }
             foreach (SpeciesRecord record in sim.Species.Records) record.CurrentPopulation = 0;
             for (int i = 0; i < sim.Cells.AliveCount; i++)
             {

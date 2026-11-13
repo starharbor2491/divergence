@@ -278,9 +278,18 @@ namespace Evo.UnityLayer
         void RebuildTint()
         {
             float sx = sim.World.Width / TintW, sy = sim.World.Height / TintH;
+            const float feather = 6f;
             for (int j = 0; j < TintH; j++)
+            {
+                float fy = Mathf.Clamp01(Mathf.Min(j, TintH - 1 - j) / feather);
                 for (int i = 0; i < TintW; i++)
-                    tintPixels[j * TintW + i] = TemperatureColors.At(sim.World.TemperatureAt((i + 0.5f) * sx, (j + 0.5f) * sy));
+                {
+                    float fx = Mathf.Clamp01(Mathf.Min(i, TintW - 1 - i) / feather);
+                    Color32 tc = TemperatureColors.At(sim.World.TemperatureAt((i + 0.5f) * sx, (j + 0.5f) * sy));
+                    tc.a = (byte)Mathf.RoundToInt(255f * fx * fy);
+                    tintPixels[j * TintW + i] = tc;
+                }
+            }
             tintTexture.SetPixels32(tintPixels);
             tintTexture.Apply(false, false);
         }
@@ -460,20 +469,21 @@ namespace Evo.UnityLayer
         {
             overlay.Begin();
 
-            // Luminous petri-dish / tide-pool containment frame
-            float outerPad = 4f * upp;
-            Color32 outerGlow = C32(DesignTokens.WorldWall, 0.22f);
-            Color32 innerWall = C32(DesignTokens.WorldWall, 0.68f);
-            float t = Mathf.Max(1.35f * upp, 0.06f);
-            overlay.Segment(-outerPad, -outerPad, w + outerPad, -outerPad, t * 2.2f, outerGlow);
-            overlay.Segment(w + outerPad, -outerPad, w + outerPad, h + outerPad, t * 2.2f, outerGlow);
-            overlay.Segment(w + outerPad, h + outerPad, -outerPad, h + outerPad, t * 2.2f, outerGlow);
-            overlay.Segment(-outerPad, h + outerPad, -outerPad, -outerPad, t * 2.2f, outerGlow);
-
+            // Subtle corner reticle ticks only (no hard box cutting behind floating panels)
+            Color32 innerWall = C32(DesignTokens.WorldWall, 0.06f);
+            Color32 cornerTick = C32(DesignTokens.WorldWall, 0.28f);
+            float t = Mathf.Max(1.0f * upp, 0.05f);
             overlay.Segment(0, 0, w, 0, t, innerWall);
             overlay.Segment(w, 0, w, h, t, innerWall);
             overlay.Segment(w, h, 0, h, t, innerWall);
             overlay.Segment(0, h, 0, 0, t, innerWall);
+
+            float cl = 3.2f;
+            float ct = Mathf.Max(1.4f * upp, 0.06f);
+            overlay.Segment(0, 0, cl, 0, ct, cornerTick); overlay.Segment(0, 0, 0, cl, ct, cornerTick);
+            overlay.Segment(w, 0, w - cl, 0, ct, cornerTick); overlay.Segment(w, 0, w, cl, ct, cornerTick);
+            overlay.Segment(w, h, w - cl, h, ct, cornerTick); overlay.Segment(w, h, w, h - cl, ct, cornerTick);
+            overlay.Segment(0, h, cl, h, ct, cornerTick); overlay.Segment(0, h, 0, h - cl, ct, cornerTick);
 
             // Mitosis / birth ripples
             for (int i = 0; i < MaxRipples; i++)

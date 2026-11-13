@@ -9,16 +9,17 @@ namespace Evo.UnityLayer
         public string Key;
     }
 
-    /// <summary>The shared copy table: tooltips, chart captions, Preset descriptions and the Help screen, written once.</summary>
     public static class UiText
     {
-        struct Entry { public string Name, Text; }
+        struct Entry { public string Name, Text, Key; }
 
         static readonly Dictionary<string, Entry> table = new Dictionary<string, Entry>();
 
-        static void Add(string id, string name, string text) { table[id] = new Entry { Name = name, Text = text }; }
+        static void Add(string id, string name, string text, string key = null)
+        {
+            table[id] = new Entry { Name = name, Text = text, Key = key };
+        }
 
-        /// <summary>Canonical tooltip ids in Trait index order, including the two mating Traits.</summary>
         public static readonly string[] TraitIds =
         {
             "trait-size", "trait-speed", "trait-sense", "trait-temperature", "trait-tolerance",
@@ -27,121 +28,115 @@ namespace Evo.UnityLayer
 
         public static readonly string[] HelpTitles =
         {
-            "What this is", "Controls", "Settings", "The World", "Traits",
-            "Reproduction", "Species and colours", "Charts", "Events", "Save and exports"
+            "Overview", "Controls", "World setup", "Environment", "Inherited traits",
+            "Reproduction", "Species & colour", "Reading charts", "Events", "Saving & data"
         };
 
         public static readonly string[] HelpBodies =
         {
-            "Divergence is a model of natural selection. Cells live in a World with Food, Toxin and varying Temperature. Cells that suit the World survive and reproduce, so their Traits become more common over generations. Over time the population can split into Species.",
-            "Drag to move the view. Scroll to zoom. Click a Cell to inspect it and see its sense range. Space pauses. Keys 1 to 4 change speed. F fits the World. T boosts the thermal map. Tab hides the charts panel. Escape cancels or closes.",
-            "The Seed fixes the World. Food abundance, Temperature range, zone scale, Toxin level and mutation rate shape it. Presets fill these in. The same Seed and settings always make the same starting World.",
-            "Temperature varies smoothly from cold blue currents to hot coral zones. Food appears as glowing green pellets, more in some places than others. Toxin is a set of pink particles that drift, attract each other slightly and fade.",
-            "Each Cell inherits ten Traits: size, speed, sense range, preferred Temperature, Temperature tolerance, Toxin resistance, diet, reproduction threshold, sexual tendency and choosiness. Traits have benefits and trade-offs, so no Cell is best everywhere. Hover a Trait for its meaning, units and trade-off.",
-            "Below sexual tendency 0.50, a Cell divides at its energy threshold. At 0.50 or above, it needs a sexual partner within sense range with enough energy and mutual acceptance under both Cells' choosiness. Both pay energy; crossover takes each Trait and Brain weight from either parent, then mutation can make small random changes. Without a partner it waits; it never divides alone.",
-            "Cells begin white. A Cell's colour comes from its Genome, so similar Cells have similar colours. Grazers show a green inner core while high-diet hunters grow warm amber cores and front mandibles. A Species is a group of Cells whose Genomes are close together; a new Species appears when a group drifts far enough apart.",
-            "Traits shows one Trait over time or mean Generation, with a dashed line marking the Founders' starting average. Species shows the twenty Species with highest historical peaks; the rest form Other. Tree shows which Species split from which. Stats shows deaths in the latest ten minutes; legend totals cover the whole Run. Sexual share counts living Cells with sexual tendency at least 0.50, not births.",
-            "Events change the World while a Run is going. Pick an Event from the bottom dock, set its size, then click the World to place it. Whole World applies without placement; for toxin spills, radius still sets quantity.",
-            "Save requests a Run download. Load restores a valid saved file. Export CSV requests two data files; your browser may ask permission for multiple downloads. Screenshot requests a PNG. Check your browser's downloads; the app cannot confirm files reached disk."
+            "Divergence simulates natural selection in continuous 2D space. Cells move, eat food pellets, avoid drifting toxin, and cope with local temperature. Individuals better suited to their surroundings survive longer and leave more offspring, shifting population traits over generations until lineages split into distinct species.",
+            "Drag anywhere in the water to pan and scroll to zoom around the cursor. Click any living cell to inspect its traits, energy, sense radius, and live neural outputs.",
+            "A seed fixes the initial terrain and starting population so identical settings always begin from the same world. Presets configure ready-made environments, or you can adjust any slider manually.",
+            "Temperature varies smoothly across the water from cool blue currents to warm coral regions. Food spawns more densely in fertile patches, while toxin particles drift, attract slightly, and gradually decay.",
+            "Every cell inherits ten numerical traits alongside a 100-weight neural brain. Each trait carries an energy or survival trade-off, so what helps in one environment can be costly in another.",
+            "Cells with sexual tendency below 0.50 divide on their own once they store enough energy. At 0.50 or above, two compatible neighbours within sense range must both have sufficient energy to combine genomes, with small random mutations applied at birth.",
+            "Founders begin near white. As mutations accumulate in traits and brain weights, genome colours shift smoothly in perceptual colour space. Grazers show a green inner organelle, while high-diet hunters develop warm amber cores and front mandibles.",
+            "Charts sample the living population once per simulated second. You can plot traits against elapsed time or average generation, hover any chart to inspect exact values, and click species rows to spotlight them in the water.",
+            "Triggering an event alters local or global pressures while a run is underway—useful for testing how quickly a population adapts to sudden heat, cold, scarcity, abundance, or toxin.",
+            "Runs can be saved to a JSON snapshot and resumed identically later. CSV export writes two tables—trait history and species populations—for plotting or lab analysis."
         };
 
         static UiText()
         {
-            // Controls
-            Add("play", "Resume", "Resumes the simulation. Key: Space.");
-            Add("pause", "Pause", "Freezes the simulation so you can pan, zoom and inspect Cells. Key: Space.");
-            Add("speed-1", "Speed 1x", "Runs the simulation at normal real-time speed. Key: 1.");
-            Add("speed-2", "Speed 2x", "Runs at twice normal speed. Key: 2.");
-            Add("speed-3", "Speed 5x", "Runs at five times normal speed. Key: 3.");
-            Add("speed-4", "Speed 10x", "Runs at ten times normal speed. On slow computers the real speed may be lower. Key: 4.");
-            Add("events", "Events", "Places a heat wave, ice age, famine, food bloom or toxin spill in the World.");
-            Add("temperature-tint", "Thermal map", "Boosts the colour overlay for Temperature: blue is cold, coral-red is hot. Key: T.");
-            Add("fit-view", "Fit World", "Centres and zooms the camera to fit the whole World inside the stage. Key: F.");
-            Add("field-notes", "Field notes", "Plain-English observations of natural selection, placed Events and Species splits as they happen.");
-            Add("save", "Save run", "Requests a download of this Run for loading later. Check your browser's downloads before discarding it.");
-            Add("load", "Load run", "Opens a saved Run file. A valid file replaces the current Run only after confirmation.");
-            Add("csv", "Export CSV", "Requests two CSV downloads for recorded Trait and Species data. Your browser may ask permission for multiple downloads.");
-            Add("screenshot", "Screenshot", "Requests a PNG download of the window. Check your browser's downloads for the file.");
-            Add("help", "How it works", "Opens the illustrated guide to natural selection, Traits and controls.");
-            Add("panel", "Charts panel", "Shows or hides the floating charts panel. Key: Tab.");
-            Add("home", "Menu", "Opens a confirmation before returning to setup and discarding this Run.");
-            Add("random-seed", "New random seed", "Fills the Seed field with a random code.");
-            Add("restart", "Restart", "Opens a confirmation before replacing this Run with a new one using the same Seed and settings.");
-            Add("close", "Close", "Closes this window. Key: Escape.");
-            Add("inspector-close", "Close", "Stops inspecting this Cell. Key: Escape.");
-            Add("confirm-cancel", "Cancel", "Keeps the current Run without discarding or replacing it. Key: Escape.");
-            Add("confirm-discard", "Discard", "Discards the current Run and continues the chosen action. Check that any requested save is in your browser's downloads first.");
-            Add("confirm-save", "Save", "Requests a Run download and keeps the current Run. Check your browser's downloads before choosing Discard; the app cannot confirm a disk write.");
+            Add("play", "Resume", "Continues the simulation.", "Key: Space");
+            Add("pause", "Pause", "Pauses simulation steps while keeping camera and cell inspection active.", "Key: Space");
+            Add("speed-1", "1x speed", "Real-time simulation speed.", "Key: 1");
+            Add("speed-2", "2x speed", "Twice normal simulation speed.", "Key: 2");
+            Add("speed-3", "5x speed", "Five times normal simulation speed.", "Key: 3");
+            Add("speed-4", "10x speed", "Up to ten times normal speed, depending on CPU load.", "Key: 4");
+            Add("events", "Events", "Introduce a localized or world-wide environmental change.");
+            Add("temperature-tint", "Thermal overlay", "Highlights cold blue and warm red temperature zones across the water.", "Key: T");
+            Add("fit-view", "Reset view", "Frames the entire world inside the open viewport.", "Key: F");
+            Add("field-notes", "Field log", "Live notes when pressures change, traits shift, or new species branch off.");
+            Add("save", "Save snapshot", "Downloads the current run state as a JSON file.");
+            Add("load", "Load snapshot", "Opens a previously saved JSON run file.");
+            Add("csv", "Export CSV", "Downloads trait and species time-series tables as CSV files.");
+            Add("screenshot", "Save PNG", "Captures the current window as a PNG image.");
+            Add("help", "Guide", "Opens the reference guide for traits, events, and controls.");
+            Add("panel", "Charts panel", "Shows or hides the right-hand charts panel.", "Key: Tab");
+            Add("home", "Back to setup", "Returns to world setup after confirmation.");
+            Add("random-seed", "Randomize seed", "Generates a new 6-character seed.");
+            Add("restart", "Restart run", "Starts a fresh run with the same seed and settings.");
+            Add("close", "Close", "Closes this dialog.", "Key: Escape");
+            Add("inspector-close", "Deselect", "Clears the current cell selection.", "Key: Escape");
+            Add("confirm-cancel", "Cancel", "Keeps the current run open.", "Key: Escape");
+            Add("confirm-discard", "Discard", "Ends the current run and proceeds.");
+            Add("confirm-save", "Save first", "Downloads a snapshot of the current run before you leave.");
 
-            // Setup & Presets
-            Add("preset", "Preset", "A ready-made set of settings and a Seed. Changing any setting afterwards switches to Custom.");
-            Add("preset-mild", "Mild world", "Gentle Temperature variation and steady Food. Ideal first Run to watch gradual Mutation and colour drift.");
-            Add("preset-gradient", "Cold gradient", "Strong contrast between cold and hot regions. Watch Cells adapt different preferred Temperatures by zone.");
-            Add("preset-basin", "Toxic basin", "Dense drifting Toxin clouds across the World. Creates strong Pressure for higher Toxin resistance.");
-            Add("preset-rapid", "Rapid evolution", "Abundant Food, sharp Temperature zones and double mutation rate for fast Trait shifts and Species splits.");
-            Add("seed", "Seed", "A code that fixes the World. The same Seed and settings always start the same World.");
-            Add("food-abundance", "Food abundance", "How fast Food appears. Higher values support more Cells. Range 0.20 to 2.00.");
-            Add("temperature-range", "Temperature range", "How different the coldest and hottest parts of the World are. 0 is uniform, 1 is the strongest contrast.");
-            Add("zone-scale", "Zone scale", "How large the warm and cold zones are. Lower values make large zones, higher values make smaller pockets.");
-            Add("toxin-level", "Toxin level", "How much Toxin the World starts with. 0 means none.");
-            Add("mutation-rate", "Mutation rate", "How much Traits and Brains change when a Cell is born. 1.00 is normal.");
-            Add("start", "Start run", "Starts a new Run in this World.");
+            Add("preset", "Presets", "Starting configurations demonstrating different selection pressures.");
+            Add("preset-mild", "Mild world", "Moderate temperature variation and steady food supply.");
+            Add("preset-gradient", "Cold gradient", "Sharp north–south thermal contrast that favours regional specialization.");
+            Add("preset-basin", "Toxic basin", "High initial toxin density that selects for toxin resistance.");
+            Add("preset-rapid", "Rapid evolution", "Abundant food, strong thermal contrast, and 2x mutation rate.");
+            Add("seed", "Seed", "Determines terrain layout and initial founder placement.");
+            Add("food-abundance", "Food abundance", "Controls how quickly food pellets replenish (0.20 to 2.00).");
+            Add("temperature-range", "Temperature contrast", "Difference between the coldest and warmest regions (0.00 to 1.00).");
+            Add("zone-scale", "Climate scale", "Lower values create broad climate belts; higher values create smaller pockets.");
+            Add("toxin-level", "Starting toxin", "Initial density of drifting toxin clouds (0.00 to 1.00).");
+            Add("mutation-rate", "Mutation rate", "Scales how much traits and brain weights vary at birth (1.00 is baseline).");
+            Add("start", "Start run", "Begins a new simulation with these settings.");
 
-            // Tabs and charts
-            Add("tab-traits", "Traits", "Shows how one Trait changes in the living population over time or Generations.");
-            Add("tab-species", "Species", "Shows how many Cells belong to each Species over time.");
-            Add("tab-tree", "Tree", "Shows which Species split from which, and when.");
-            Add("tab-stats", "Stats", "Shows live counts and why Cells die.");
-            Add("trait-select", "Trait", "Chooses which Trait the charts show.");
-            Add("axis-switch", "X axis", "Plots time in seconds, or the actual mean Generation of living Cells. The mean can decrease as the population changes, so the line can turn back.");
-            Add("chart-trait-mean", "Mean and spread", "The line is the average value of the Trait; the shaded band is one standard deviation either side. The dashed line is the Founders' starting average.");
-            Add("chart-trait-frequency", "Frequency", "Shows what share of Cells has each range of the Trait. Darker shades are lower values.");
-            Add("chart-species", "Species over time", "Band height is population for each of the twenty Species with highest historical peaks. Other combines the rest; hover identifies the plotted layers.");
-            Add("chart-tree", "Family tree", "Each line is a Species from when it first appeared to when it died out. Curved branches show where a new Species split off.");
-            Add("chart-deaths", "Deaths by cause", "Shows deaths by cause in 10-second bins from the latest ten minutes. Legend totals count deaths over the whole Run.");
-            Add("event-marker", "Event marker", "Marks when an Event happened. H heat wave, I ice age, F famine, B food bloom, T toxin spill.");
+            Add("tab-traits", "Traits", "Population mean, spread, and distribution for a chosen trait.");
+            Add("tab-species", "Species", "Population size of each species over time.");
+            Add("tab-tree", "Tree", "Branching lineage diagram showing when species split or went extinct.");
+            Add("tab-stats", "Stats", "Live vital rates and causes of death.");
+            Add("trait-select", "Selected trait", "Switches which inherited trait is plotted below.");
+            Add("axis-switch", "Horizontal axis", "Switch between elapsed time and mean generation of living cells.");
+            Add("chart-trait-mean", "Mean & spread", "Solid line shows population mean; shaded band shows ±1 SD; dashed line marks founders.");
+            Add("chart-trait-frequency", "Distribution", "Share of living cells falling into six value bands from low (dark) to high (light).");
+            Add("chart-species", "Species populations", "Stacked counts for the top 20 species by peak size, with smaller lineages grouped into Other.");
+            Add("chart-tree", "Lineage tree", "Horizontal bars span each species' lifetime, weighted by population size.");
+            Add("chart-deaths", "Causes of death", "Stacked 10-second death counts over the last 10 minutes; legend numbers show cumulative totals.");
+            Add("event-marker", "Event marker", "Marks placed events along the timeline (H heat, I ice, F famine, B bloom, T toxin).");
 
-            // Events
-            Add("event-heat-wave", "Heat wave", "Raises Temperature inside the circle, then lets it return to normal.");
-            Add("event-ice-age", "Ice age", "Lowers Temperature inside the circle, then lets it return to normal.");
-            Add("event-famine", "Famine", "Removes most Food inside the circle and slows new Food there for a while.");
-            Add("event-food-bloom", "Food bloom", "Adds extra Food inside the circle for a while.");
-            Add("event-toxin-spill", "Toxin spill", "Releases Toxin inside the circle. It spreads slowly and fades.");
-            Add("event-radius", "Radius", "Radius in World units. For a toxin spill it also sets the requested particle count; Whole World changes placement, not quantity.");
-            Add("event-toxin-amount", "Toxin quantity", "By default, radius requests 30 Toxin particles per World unit: 150 to 1800 for radius 5 to 60. Remaining global capacity can reduce the actual count; Whole World changes positions, not quantity.");
-            Add("event-intensity", "Intensity", "How far Temperature moves from normal at the centre.");
-            Add("event-duration", "Duration", "How long the Event lasts at full strength, in seconds.");
-            Add("event-whole-world", "Whole World", "Applies the Event everywhere instead of in one place.");
-            Add("event-place", "Place", "Closes this window. Then click the World to place the Event.");
-            Add("event-apply", "Apply", "Applies the Event to the whole World at once.");
-            Add("event-cancel", "Cancel", "Closes this window without placing an Event. Key: Escape.");
+            Add("event-heat-wave", "Heat wave", "Temporarily raises local temperature before easing back to baseline.");
+            Add("event-ice-age", "Ice age", "Temporarily lowers local temperature before easing back to baseline.");
+            Add("event-famine", "Famine", "Clears most food in the target area and slows regrowth while active.");
+            Add("event-food-bloom", "Food bloom", "Spawns dense extra food across the target area while active.");
+            Add("event-toxin-spill", "Toxin spill", "Releases a cloud of toxin particles that slowly disperses and decays.");
+            Add("event-radius", "Radius", "Target radius in world units (also determines particle count for toxin spills).");
+            Add("event-toxin-amount", "Particle count", "Requests 30 particles per unit of radius, capped by remaining world toxin capacity.");
+            Add("event-intensity", "Intensity", "Peak temperature shift at the centre of the event.");
+            Add("event-duration", "Duration", "Time held at full strength, in simulated seconds.");
+            Add("event-whole-world", "Whole world", "Applies the event uniformly everywhere instead of at a clicked point.");
+            Add("event-place", "Place in world", "Closes this dialog so you can click a target spot in the water.");
+            Add("event-apply", "Apply now", "Triggers the event across the entire world immediately.");
+            Add("event-cancel", "Cancel", "Closes without triggering an event.", "Key: Escape");
 
-            // Trait meaning, units and trade-offs
-            Add("trait-size", "Size", "Relative size, 0.50 to 3.00; radius is half this value in World units. Larger Cells store more energy and can eat smaller Cells, but cost more energy to sustain and move.");
-            Add("trait-speed", "Speed", "Maximum movement speed, 0.50 to 4.00 World units per second. Faster movement helps reach Food or escape, but movement energy cost rises with speed squared.");
-            Add("trait-sense", "Sense range", "Detection radius for Food, Cells and Toxin, 2.00 to 15.00 World units. A wider range finds things farther away but increases baseline energy cost.");
-            Add("trait-temperature", "Preferred Temperature", "Best-suited Temperature on the 0.00 cold to 1.00 hot scale. Matching the local Temperature avoids stress; mismatches beyond tolerance cost energy.");
-            Add("trait-tolerance", "Temperature tolerance", "Allowed Temperature mismatch without stress, 0.05 to 0.50 on the Temperature scale. Wider tolerance reduces stress in more places but raises baseline energy cost.");
-            Add("trait-resistance", "Toxin resistance", "Unitless resistance, 0.00 to 1.00, reducing Toxin energy drain by up to 90%. Higher resistance protects against Toxin but raises baseline energy cost.");
-            Add("trait-diet", "Diet", "Unitless diet, 0.00 to 1.00: low values favour Food pellets, high values favour eating smaller Cells. Higher values gain more energy from prey but less from Food; predation also needs sufficient size and biting.");
-            Add("trait-reproduction", "Reproduction threshold", "Energy needed to initiate reproduction, 0.50 to 0.95 of maximum energy. A lower threshold allows earlier reproduction but leaves less energy to pass to offspring.");
-            Add("trait-sexual", "Sexual tendency", "Unitless tendency, 0.00 to 1.00: below 0.50 divides alone; at least 0.50 requires a sexual partner. Crossover combines two Genomes, but both parents pay energy and a Cell without a compatible partner waits.");
-            Add("trait-choosiness", "Choosiness", "Unitless partner selectivity, 0.00 to 1.00, used by sexual Cells. Higher values accept only closer Genomes, preserving similarity but reducing the number of compatible partners.");
+            Add("trait-size", "Size", "0.50 to 3.00 (radius is half this). Larger cells store more energy and can prey on smaller cells, at higher metabolic cost.");
+            Add("trait-speed", "Speed", "0.50 to 4.00 units/s. Reaches food or escapes faster, though movement energy drain scales with speed squared.");
+            Add("trait-sense", "Sense range", "2.00 to 15.00 units. Detects food, neighbours, and toxin from farther away at higher upkeep cost.");
+            Add("trait-temperature", "Preferred temperature", "0.00 (cold) to 1.00 (hot). Matching local water temperature avoids thermal energy drain.");
+            Add("trait-tolerance", "Temperature tolerance", "0.05 to 0.50. Allows wider temperature mismatch before stress sets in, at higher baseline cost.");
+            Add("trait-resistance", "Toxin resistance", "0.00 to 1.00. Cuts toxin energy drain by up to 90% in exchange for higher baseline upkeep.");
+            Add("trait-diet", "Diet", "0.00 (grazer) to 1.00 (hunter). Higher values extract more energy from smaller cells and less from food pellets.");
+            Add("trait-reproduction", "Reproduction threshold", "0.50 to 0.95 of max energy. Lower values divide sooner with smaller reserves passed to offspring.");
+            Add("trait-sexual", "Sexual tendency", "Below 0.50 divides alone; 0.50 or above requires a compatible partner within sense range.");
+            Add("trait-choosiness", "Choosiness", "0.00 to 1.00. Higher values restrict mating to genetically closer partners.");
 
-            // Inspector and legend
-            Add("inspect-energy", "Energy", "The Cell's stored energy and its maximum. It dies at zero.");
-            Add("inspect-age", "Age", "Time since the Cell was born. Old Cells lose extra energy.");
-            Add("inspect-generation", "Generation", "Birth depth from a Founder, whose Generation is zero. A sexual child's Generation is one more than the higher parent Generation.");
-            Add("inspect-parent", "Parent ID", "The recorded parent's ID, not a Generation. 'none' means a Founder; sexual births record only the initiating parent's ID.");
-            Add("inspect-trait", "Trait bar", "The Trait value inside its allowed range. The tick marks the Founders' average.");
-            Add("inspect-brain", "Brain activity", "What the Cell's Brain is telling it to do right now: steer left or right, swim forward, bite prey, or court a partner.");
-            Add("legend-species", "Species", "Click to spotlight this Species' Cells in the World. Click again to clear.");
-            Add("legend-other", "Other", "The chart draws the twenty Species with highest peak populations over the Run; all others form Other. Individual living Species rows still highlight their Cells, including Species inside Other.");
-            Add("legend-cause", "Cause of death", "This cause's legend count covers the whole Run, not just the latest ten minutes shown in the chart.");
-            Add("legend-bin", "Trait range", "The range of Trait values that this shade covers.");
-            Add("stat-readout", "Live count", "A live count taken from the current Run.");
-            Add("stat-sexual-share", "Sexual share", "Share of living Cells whose sexual tendency is at least 0.50. This is not the share of births from sexual reproduction.");
-            Add("temperature-legend", "Temperature legend", "Blue is cold and coral-red is hot. The thermal map is drawn over the World.");
+            Add("inspect-energy", "Energy", "Current energy vs. capacity; reaching zero is fatal.");
+            Add("inspect-age", "Age", "Simulated time since birth; older cells incur gradual senescence drain.");
+            Add("inspect-generation", "Generation", "Lineage steps from a founder (generation 0).");
+            Add("inspect-parent", "Parent ID", "ID of the parent cell, or 'none' for founders.");
+            Add("inspect-trait", "Trait value", "Vertical tick marks the founder average.");
+            Add("inspect-brain", "Neural outputs", "Live steering, thrust, bite, and mating signals from this cell's brain.");
+            Add("legend-species", "Spotlight species", "Click to highlight members of this species in the water.");
+            Add("legend-other", "Other lineages", "Combines smaller species outside the historical top 20.");
+            Add("legend-cause", "Cumulative deaths", "Total deaths from this cause since the start of the run.");
+            Add("legend-bin", "Value band", "Trait range represented by this colour band.");
+            Add("stat-readout", "Live metric", "Updated from the active simulation.");
+            Add("stat-sexual-share", "Sexual share", "Percentage of living cells with sexual tendency ≥ 0.50.");
+            Add("temperature-legend", "Thermal scale", "Cold blue (0.0) to warm red (1.0).");
         }
 
         public static bool Has(string id) { return table.ContainsKey(id); }
@@ -163,15 +158,7 @@ namespace Evo.UnityLayer
         {
             Entry e;
             if (!table.TryGetValue(id, out e)) return new TipContent { Name = id, Body = "", Key = null };
-            string body = e.Text;
-            string key = null;
-            int k = body.LastIndexOf(" Key: ", System.StringComparison.Ordinal);
-            if (k >= 0)
-            {
-                key = body.Substring(k + 1).TrimEnd('.');
-                body = body.Substring(0, k);
-            }
-            return new TipContent { Name = e.Name, Body = body, Key = key };
+            return new TipContent { Name = e.Name, Body = e.Text, Key = e.Key };
         }
 
         public static string Body(string id)
@@ -194,13 +181,13 @@ namespace Evo.UnityLayer
         }
 
         public const string AppName = "Divergence";
-        public const string AppSubtitle = "Watch natural selection shape Traits and split Species in a living World";
-        public const string WindowTooSmall = "Window too small. Enlarge the window to at least 1280 by 720.";
+        public const string AppSubtitle = "Natural selection in a continuous aquatic world";
+        public const string WindowTooSmall = "Window too small. Enlarge the browser window to at least 1280 × 720.";
         public const string LoadFailedVersion = "This file cannot be loaded. It was made by a different version.";
         public const string LoadFailedGeneric = "This file cannot be loaded. It is not a Divergence Run.";
         public const string PopulationExtinct = "Population extinct";
-        public const string PopulationCap = "population cap";
-        public const string DownloadRequested = "Download requested. Check your browser's downloads.";
-        public const string CsvDownloadRequested = "Two CSV downloads requested. Your browser may ask permission for multiple downloads.";
+        public const string PopulationCap = "at cap";
+        public const string DownloadRequested = "Download requested.";
+        public const string CsvDownloadRequested = "Exporting trait and species CSV files.";
     }
 }

@@ -188,8 +188,8 @@ namespace Evo.UnityLayer
                 float radiusPx = entry.Radius * scaleAvg;
                 float refract = entry.Tone == GlassTone.Pill ? 1.15f : 0.9f;
 
-                Color tint = DesignTokens.Hex("#102437");
-                float tintAlpha = entry.Tone == GlassTone.Pill ? 0.44f : 0.48f;
+                Color tint = DesignTokens.Hex("#141820");
+                float tintAlpha = entry.Tone == GlassTone.Pill ? 0.48f : 0.52f;
                 var c32 = new Color32(
                     (byte)Mathf.RoundToInt(tint.r * 255f),
                     (byte)Mathf.RoundToInt(tint.g * 255f),

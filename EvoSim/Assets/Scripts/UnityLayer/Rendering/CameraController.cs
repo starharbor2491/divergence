@@ -2,14 +2,9 @@ using UnityEngine;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>
-    /// Full-bleed orthographic camera over the World. The camera always renders across 100% of the window so the living
-    /// World blurs and refracts underneath floating Liquid Glass panels, while Fit() centres the World cleanly inside
-    /// the unobstructed stage region.
-    /// </summary>
     public sealed class CameraController
     {
-        public const float FitMargin = 3.5f;
+        public const float FitMargin = 1.6f;
         public const float MinSize = 8f;
         public const float MaxFitFactor = 1.35f;
         public const float ZoomStep = 1.1f;
@@ -32,7 +27,6 @@ namespace Evo.UnityLayer
 
         public Rect Viewport { get { return stage; } }
 
-        /// <summary>Pixels per World unit at the current zoom.</summary>
         public float PixelsPerUnit { get { return Mathf.Max(1, Camera.pixelHeight) / (2f * Camera.orthographicSize); } }
 
         public float UnitsPerPixel { get { return 1f / Mathf.Max(0.0001f, PixelsPerUnit); } }
@@ -43,7 +37,6 @@ namespace Evo.UnityLayer
             Fit();
         }
 
-        /// <summary>Records the unobstructed stage rect in normalised window coordinates while keeping full-bleed camera output.</summary>
         public void SetViewport(Rect normalised)
         {
             if (normalised.width <= 0.01f || normalised.height <= 0.01f) return;
@@ -73,13 +66,11 @@ namespace Evo.UnityLayer
             Camera.orthographicSize = size;
             float fullW = 2f * size * FullAspect;
             float fullH = 2f * size;
-            // Shift camera so the World centre lands at the centre of the unobstructed stage
             float offsetX = (stage.center.x - 0.5f) * fullW;
             float offsetY = (stage.center.y - 0.5f) * fullH;
             Camera.transform.position = new Vector3(worldW * 0.5f - offsetX, worldH * 0.5f - offsetY, -1f);
         }
 
-        /// <summary>Centres directly on the World for the full-screen Setup ambient backdrop.</summary>
         public void FitCentered(float zoomFactor = 0.86f)
         {
             float halfH = worldH * 0.5f;
@@ -122,7 +113,6 @@ namespace Evo.UnityLayer
             ClampPosition();
         }
 
-        /// <summary>Zooms by notches (positive zooms in) keeping the World point under the pointer fixed.</summary>
         public void Zoom(float notches, Vector2 screenPointer)
         {
             if (Mathf.Abs(notches) < 1e-4f) return;

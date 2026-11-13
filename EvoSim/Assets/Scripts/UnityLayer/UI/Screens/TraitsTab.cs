@@ -5,7 +5,6 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>Traits tab: Trait selector, Time / Generation pill switch, Trait trade-off summary, mean/spread chart, and frequency bins.</summary>
     public sealed class TraitsTab : PanelTab
     {
         readonly EvoDropdown dropdown;
@@ -44,8 +43,8 @@ namespace Evo.UnityLayer
             generationButton.style.height = DesignTokens.ControlHeight - 4;
             timeButton.Pad(0, 10);
             generationButton.Pad(0, 10);
-            timeButton.Round(DesignTokens.Radius - 3);
-            generationButton.Round(DesignTokens.Radius - 3);
+            timeButton.Round(DesignTokens.Radius - 2);
+            generationButton.Round(DesignTokens.Radius - 2);
             timeButton.Selected = true;
             timeButton.Clicked += () => SetAxis(false);
             generationButton.Clicked += () => SetAxis(true);
@@ -54,22 +53,18 @@ namespace Evo.UnityLayer
             controls.Add(axis);
             Add(controls);
 
-            VisualElement defCard = new VisualElement();
-            LiquidGlass.StyleWell(defCard, DesignTokens.Radius);
-            defCard.Pad(DesignTokens.Space2, DesignTokens.Space3);
-            defCard.style.marginTop = DesignTokens.Space2;
             Label definition = Ui.Caption("", DesignTokens.Text2);
-            defCard.Add(definition);
-            Add(defCard);
+            definition.style.marginTop = DesignTokens.Space2;
+            Add(definition);
 
             dropdown.Changed += i => definition.text = UiText.TraitTip(i).Body;
             definition.text = UiText.TraitTip(trait).Body;
             Tooltips.Attach(tl, () => UiText.TraitTip(trait));
 
-            FixedHeight(lineChart, 205);
-            Add(Section("Mean and spread", "dashed = Founder start", "chart-trait-mean", UiText.Body("chart-trait-mean"), lineChart));
+            FixedHeight(lineChart, 200);
+            Add(Section("Mean & spread", "", "chart-trait-mean", "Population mean ± 1 SD; dashed line marks the founder average.", lineChart));
 
-            FixedHeight(freqChart, 195);
+            FixedHeight(freqChart, 190);
             VisualElement freq = Ui.Column();
             freq.Add(freqChart);
             VisualElement legendBox = Ui.Column();
@@ -80,7 +75,7 @@ namespace Evo.UnityLayer
                 legendBox.Add(legend[b]);
             }
             freq.Add(legendBox);
-            Add(Section("Trait frequency", "share of living Cells", "chart-trait-frequency", UiText.Body("chart-trait-frequency"), freq));
+            Add(Section("Value distribution", "share of cells", "chart-trait-frequency", "Proportion of living cells in each value range.", freq));
         }
 
         static string Capitalise(string s) { return s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s.Substring(1); }
@@ -104,7 +99,11 @@ namespace Evo.UnityLayer
         {
             if (sim == null) return;
             for (int b = 0; b < TraitBins.Count; b++)
-                legend[b].Set(DesignTokens.Bins[b], TraitFrequencyChart.BinRange(trait, b, sim.P), "");
+            {
+                string range = TraitFrequencyChart.BinRange(trait, b, sim.P);
+                legend[b].Show(range != "out of range");
+                legend[b].Set(DesignTokens.Bins[b], range, "");
+            }
         }
 
         public override void Bind(Simulation s)

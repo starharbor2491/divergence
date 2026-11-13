@@ -18,7 +18,7 @@ namespace Evo.Editor
                 scenes = new[] { ProjectSetup.ScenePath },
                 locationPathName = output,
                 target = BuildTarget.StandaloneOSX,
-                options = BuildOptions.Development,
+                options = BuildOptions.None,
             };
             BuildReport report = BuildPipeline.BuildPlayer(options);
             Debug.Log("DevBuild: " + report.summary.result);

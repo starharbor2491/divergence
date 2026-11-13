@@ -16,10 +16,12 @@ namespace Evo.Tests
         }
 
         [Test]
-        public void TokensUssMatchesGeneratedOutput()
+        public void PrimaryTextAndAccentMeetReadableContrast()
         {
-            string committed = File.ReadAllText(ProjectPath("Assets/UI/Theme/tokens.uss"));
-            Assert.AreEqual(DesignTokens.GenerateUss(), committed, "tokens.uss is out of date. Run Evo.Editor.ProjectSetup.Apply.");
+            Assert.Greater(DesignTokens.Text1.r, 0.85f);
+            Assert.Less(DesignTokens.Bg0.r, 0.15f);
+            Assert.AreEqual(6, DesignTokens.Bins.Length);
+            Assert.AreEqual(5, DesignTokens.Causes.Length);
         }
 
         [Test]

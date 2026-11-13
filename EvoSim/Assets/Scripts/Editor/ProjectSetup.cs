@@ -24,7 +24,6 @@ namespace Evo.Editor
         [MenuItem("Divergence/Apply project setup")]
         public static void Apply()
         {
-            GenerateTokensUss.Write();
             WriteTheme();
             CreateRenderAssets();
             CreateScene();
@@ -102,22 +101,6 @@ namespace Evo.Editor
             PlayerSettings.WebGL.dataCaching = true;
             PlayerSettings.WebGL.initialMemorySize = 128;
             PlayerSettings.WebGL.template = "PROJECT:Divergence";
-        }
-    }
-
-    /// <summary>Writes Assets/UI/Theme/tokens.uss from DesignTokens (DESIGN 9). A test checks the committed file matches.</summary>
-    public static class GenerateTokensUss
-    {
-        [MenuItem("Divergence/Generate tokens.uss")]
-        public static void Write()
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(ProjectSetup.TokensPath));
-            string text = DesignTokens.GenerateUss();
-            if (!File.Exists(ProjectSetup.TokensPath) || File.ReadAllText(ProjectSetup.TokensPath) != text)
-            {
-                File.WriteAllText(ProjectSetup.TokensPath, text);
-                AssetDatabase.ImportAsset(ProjectSetup.TokensPath);
-            }
         }
     }
 }

@@ -4,10 +4,6 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>
-    /// Floating Liquid Glass top bar: labeled Pause/Resume button, readable 1x–10x speed pills, tabular live telemetry
-    /// (Time, Generation, Cells, Species), Thermal map & Fit View controls, file exports, How it works, Charts toggle, and Menu.
-    /// </summary>
     public sealed class TopBar : VisualElement
     {
         readonly AppController app;
@@ -26,14 +22,12 @@ namespace Evo.UnityLayer
             style.flexShrink = 0;
             style.flexDirection = FlexDirection.Row;
             style.alignItems = Align.Center;
-            this.Margin(DesignTokens.Space3, DesignTokens.Space3, 0, DesignTokens.Space3);
+            this.Margin(10, 12, 0, 12);
             LiquidGlass.Attach(this, DesignTokens.RadiusPanel, GlassTone.Pill);
-            this.Pad(0, DesignTokens.Space3);
+            this.Pad(0, 10);
 
-            // Transport: Play/Pause with clear label + 1x/2x/5x/10x segmented pill
             play = new EvoButton(ButtonKind.Secondary, "Pause", "pause", "pause");
-            play.style.minWidth = 98;
-            play.Round(DesignTokens.RadiusPill);
+            play.style.minWidth = 94;
             play.Clicked += app.TogglePause;
             Add(play);
 
@@ -51,27 +45,23 @@ namespace Evo.UnityLayer
                 int index = i;
                 speeds[i] = new EvoButton(ButtonKind.Tab, speedLabels[i], null, speedTips[i]);
                 speeds[i].style.height = DesignTokens.ControlHeight - 4;
-                speeds[i].style.minWidth = 44;
-                speeds[i].Pad(0, 10);
-                speeds[i].Round(DesignTokens.Radius - 3);
+                speeds[i].style.minWidth = 42;
+                speeds[i].Pad(0, 9);
+                speeds[i].Round(DesignTokens.Radius - 2);
                 speeds[i].Clicked += () => app.SetSpeed(index);
                 group.Add(speeds[i]);
             }
             Add(group);
 
-            // Live Telemetry Well
             VisualElement readout = Ui.Row();
-            readout.style.marginLeft = DesignTokens.Space3;
-            readout.style.height = DesignTokens.ControlHeight;
-            LiquidGlass.StyleWell(readout, DesignTokens.Radius);
-            readout.Pad(0, DesignTokens.Space4);
+            readout.style.marginLeft = DesignTokens.Space4;
             readout.pickingMode = PickingMode.Position;
             Tooltips.Attach(readout, "stat-readout");
             timeValue = Metric(readout, "Time", false);
             generationValue = Metric(readout, "Gen", true);
             cellsValue = Metric(readout, "Cells", true);
             speciesValue = Metric(readout, "Species", true);
-            capNote = Ui.CaptionBold(UiText.PopulationCap, DesignTokens.StatusWarning);
+            capNote = Ui.Caption(UiText.PopulationCap, DesignTokens.StatusWarning);
             capNote.style.marginLeft = DesignTokens.Space3;
             capNote.Show(false);
             readout.Add(capNote);
@@ -79,7 +69,6 @@ namespace Evo.UnityLayer
 
             Add(Ui.Spacer());
 
-            // View tools
             tint = new EvoButton(ButtonKind.Secondary, "Thermal", "temperature", "temperature-tint");
             tint.Clicked += app.ToggleTint;
             Add(tint);
@@ -91,7 +80,6 @@ namespace Evo.UnityLayer
 
             Add(Divider());
 
-            // File actions
             AddIcon("save", "save", app.SaveRun);
             var load = AddIcon("load", "load", () => { });
             FileBridge.BindPicker(load, app.LoadRunFromPicker, () => !ui.ModalOpen && !ui.WindowTooSmall);
@@ -100,7 +88,6 @@ namespace Evo.UnityLayer
 
             Add(Divider());
 
-            // Guide, Charts panel toggle, Menu
             var guide = new EvoButton(ButtonKind.Secondary, "Guide", "help", "help");
             guide.Clicked += ui.OpenHelp;
             Add(guide);
@@ -118,7 +105,7 @@ namespace Evo.UnityLayer
 
         VisualElement Divider()
         {
-            VisualElement d = Ui.Divider(true, 22);
+            VisualElement d = Ui.Divider(true, 20);
             d.style.marginLeft = d.style.marginRight = DesignTokens.Space2;
             return d;
         }

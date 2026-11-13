@@ -5,7 +5,6 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>Liquid Glass tooltip & chart hover card. Ordinary tooltips ignore pointer picking.</summary>
     public sealed class TooltipCard : VisualElement
     {
         readonly VisualElement body = new VisualElement();
@@ -18,7 +17,7 @@ namespace Evo.UnityLayer
             pickingMode = interactive ? PickingMode.Position : PickingMode.Ignore;
             style.position = Position.Absolute;
             LiquidGlass.Attach(this, DesignTokens.RadiusCard, GlassTone.Modal);
-            this.Pad(DesignTokens.Space3, DesignTokens.Space4);
+            this.Pad(10, 12);
             style.maxWidth = DesignTokens.TooltipMaxWidth;
             style.visibility = Visibility.Hidden;
             body.pickingMode = PickingMode.Ignore;
@@ -44,28 +43,28 @@ namespace Evo.UnityLayer
             }
             if (!string.IsNullOrEmpty(tip.Key))
             {
-                Label l = Ui.MonoCaption(tip.Key, DesignTokens.AccentText);
-                l.style.marginTop = DesignTokens.Space2;
+                Label l = Ui.MonoCaption(tip.Key, DesignTokens.Text3);
+                l.style.marginTop = 6;
                 body.Add(l);
             }
         }
 
-        /// <summary>A chart read-out: a title line and rows with an optional colour swatch, a name and a tabular value.</summary>
         public void SetRows(string title, List<ReadoutRow> rows)
         {
             body.Clear();
-            body.Add(Ui.CaptionBold(title, DesignTokens.AccentText));
+            scroll.scrollOffset = Vector2.zero;
+            body.Add(Ui.CaptionBold(title, DesignTokens.Text1));
             foreach (ReadoutRow r in rows)
             {
                 VisualElement row = Ui.Row();
                 row.pickingMode = PickingMode.Ignore;
-                row.style.marginTop = DesignTokens.Space1;
+                row.style.marginTop = 3;
                 if (r.Swatch.HasValue)
                 {
                     var sw = new VisualElement();
                     sw.pickingMode = PickingMode.Ignore;
-                    sw.Size(10, 10);
-                    sw.Round(5);
+                    sw.Size(8, 8);
+                    sw.Round(4);
                     sw.style.backgroundColor = r.Swatch.Value;
                     sw.style.marginRight = DesignTokens.Space2;
                     sw.style.flexShrink = 0;
@@ -82,31 +81,48 @@ namespace Evo.UnityLayer
             }
         }
 
-        public void PlaceNear(Vector2 point)
+        public void PlaceNear(Vector2 point, Rect? confine = null)
         {
             style.left = point.x + 14;
             style.top = point.y + 18;
             style.visibility = Visibility.Hidden;
             if (parent != null)
             {
-                float available = Mathf.Max(DesignTokens.ControlHeight, parent.layout.height - DesignTokens.Space2);
+                float boundH = confine.HasValue && confine.Value.height > 80f ? confine.Value.height - 8f : Mathf.Min(280f, parent.layout.height - DesignTokens.Space4);
+                float available = Mathf.Max(DesignTokens.ControlHeight, boundH);
                 style.maxHeight = available;
-                scroll.style.maxHeight = available - DesignTokens.Space5;
+                scroll.style.maxHeight = available - 20f;
                 style.maxWidth = Mathf.Min(DesignTokens.TooltipMaxWidth, parent.layout.width - DesignTokens.Space2);
             }
-            RegisterCallbackOnce<GeometryChangedEvent>(e => Reposition(point));
-            schedule.Execute(() => Reposition(point)).StartingIn(0);
+            RegisterCallbackOnce<GeometryChangedEvent>(e => Reposition(point, confine));
+            schedule.Execute(() => Reposition(point, confine)).StartingIn(0);
         }
 
-        void Reposition(Vector2 point)
+        void Reposition(Vector2 point, Rect? confine)
         {
             if (parent == null) return;
             float pw = parent.layout.width, ph = parent.layout.height;
             float w = layout.width, h = layout.height;
             if (float.IsNaN(w) || w <= 0f) return;
-            float x = point.x + 14, y = point.y + 18;
-            if (x + w > pw - 4) x = point.x - 14 - w;
-            if (y + h > ph - 4) y = point.y - 14 - h;
+
+            if (confine.HasValue && confine.Value.width > 40f && confine.Value.height > 40f)
+            {
+                Rect c = confine.Value;
+                float cx = point.x - 14 - w;
+                if (cx < c.xMin + 4f) cx = point.x + 14;
+                cx = Mathf.Clamp(cx, Mathf.Max(DesignTokens.Space1, c.xMin + 4f), Mathf.Min(pw - w - DesignTokens.Space1, Mathf.Max(c.xMin + 4f, c.xMax - w - 4f)));
+                float cy = Mathf.Clamp(point.y - h * 0.5f, Mathf.Max(DesignTokens.Space1, c.yMin + 4f), Mathf.Min(ph - h - DesignTokens.Space1, Mathf.Max(c.yMin + 4f, c.yMax - h - 4f)));
+                style.left = cx;
+                style.top = cy;
+                style.visibility = Visibility.Visible;
+                return;
+            }
+
+            float x = point.x > pw * 0.62f ? point.x - 16 - w : point.x + 14;
+            float y = point.y + 16;
+            if (x < DesignTokens.Space2) x = point.x + 14;
+            if (x + w > pw - 6) x = pw - w - 6;
+            if (y + h > ph - 6) y = point.y - 14 - h;
             style.left = Mathf.Clamp(x, DesignTokens.Space1, Mathf.Max(DesignTokens.Space1, pw - w - DesignTokens.Space1));
             style.top = Mathf.Clamp(y, DesignTokens.Space1, Mathf.Max(DesignTokens.Space1, ph - h - DesignTokens.Space1));
             style.visibility = Visibility.Visible;

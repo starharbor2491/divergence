@@ -4,7 +4,6 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>Liquid Glass confirmation safeguard before discarding or replacing the current Run.</summary>
     public sealed class RunActionDialog : VisualElement
     {
         Action cancel;
@@ -38,7 +37,7 @@ namespace Evo.UnityLayer
             header.Add(close);
             card.Add(header);
 
-            Label note = Ui.Body("The current Run will be discarded. Save first if you want to keep it.", DesignTokens.Text2);
+            Label note = Ui.Body("Your current run will end unless you save a snapshot first.", DesignTokens.Text2);
             note.style.marginTop = DesignTokens.Space3;
             note.style.marginBottom = DesignTokens.Space4;
             card.Add(note);
@@ -53,10 +52,10 @@ namespace Evo.UnityLayer
             download.Clicked += () =>
             {
                 save();
-                note.text = "Download requested. Check your browser's downloads before discarding the Run.";
+                note.text = "Snapshot download requested. Check your browser downloads before discarding.";
             };
             buttons.Add(download);
-            var proceed = new EvoButton(ButtonKind.Primary, action, null, "confirm-discard");
+            var proceed = new EvoButton(ButtonKind.Danger, action, null, "confirm-discard");
             proceed.style.marginLeft = DesignTokens.Space2;
             proceed.Clicked += () => { Close(false); discard(); };
             buttons.Add(proceed);

@@ -1,18 +1,18 @@
 using Evo.Core;
-using UnityEngine;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>Tree tab (PLAN 12.2): the family tree of Species. Clicking a line highlights that Species' Cells.</summary>
     public sealed class TreeTab : PanelTab
     {
         readonly TreeChart chart = new TreeChart();
 
         public TreeTab(AppController app) : base(app)
         {
+            var sec = Section("Lineage tree", "time", "chart-tree", "Branches show speciation splits; line thickness reflects population size.", chart);
+            sec.style.marginTop = DesignTokens.Space1;
             FixedHeight(chart, 460);
             chart.SpeciesClicked += id => app.ToggleHighlight(id);
-            Add(Section("Family tree", "time", "chart-tree", UiText.Body("chart-tree"), chart));
+            Add(sec);
         }
 
         public override void Bind(Simulation s)

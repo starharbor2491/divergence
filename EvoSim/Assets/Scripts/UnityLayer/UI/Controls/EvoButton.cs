@@ -4,9 +4,8 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    public enum ButtonKind { Primary, Secondary, Icon, Tab }
+    public enum ButtonKind { Primary, Secondary, Icon, Tab, Danger }
 
-    /// <summary>Liquid Glass button, icon button, toggle and segmented pill tab. Colours come from DesignTokens only.</summary>
     public sealed class EvoButton : VisualElement
     {
         public event Action Clicked;
@@ -27,19 +26,19 @@ namespace Evo.UnityLayer
             style.height = DesignTokens.ControlHeight;
             style.minWidth = DesignTokens.ControlHeight;
             style.flexShrink = 0;
-            this.Round(kind == ButtonKind.Primary ? DesignTokens.RadiusPill : DesignTokens.Radius);
+            this.Round(DesignTokens.Radius);
             focusable = false;
 
             if (iconName != null)
             {
-                icon = new IconElement(iconName, 18f);
+                icon = new IconElement(iconName, 17f);
                 Add(icon);
             }
             if (!string.IsNullOrEmpty(text))
             {
                 label = Ui.LabelText(text);
                 label.style.whiteSpace = WhiteSpace.NoWrap;
-                if (icon != null) label.style.marginLeft = DesignTokens.Space2;
+                if (icon != null) label.style.marginLeft = 7;
                 Add(label);
             }
             if (kind == ButtonKind.Icon && string.IsNullOrEmpty(text))
@@ -48,10 +47,8 @@ namespace Evo.UnityLayer
             }
             else
             {
-                this.Pad(0, kind == ButtonKind.Primary ? DesignTokens.Space5 : 14);
+                this.Pad(0, kind == ButtonKind.Primary || kind == ButtonKind.Danger ? 18 : 13);
             }
-
-            generateVisualContent += PaintHighlight;
 
             RegisterCallback<PointerEnterEvent>(e => { hover = true; Refresh(); });
             RegisterCallback<PointerLeaveEvent>(e => { hover = false; Refresh(); });
@@ -127,34 +124,6 @@ namespace Evo.UnityLayer
             return local.x >= 0 && local.y >= 0 && local.x <= layout.width && local.y <= layout.height;
         }
 
-        void PaintHighlight(MeshGenerationContext ctx)
-        {
-            if (disabled) return;
-            float w = layout.width, h = layout.height;
-            if (float.IsNaN(w) || w < 6f || h < 6f) return;
-            bool showGloss = kind == ButtonKind.Primary || (kind == ButtonKind.Secondary && (hover || selected || toggled)) || (kind == ButtonKind.Tab && selected);
-            if (!showGloss) return;
-
-            float rad = Mathf.Min(resolvedStyle.borderTopLeftRadius, Mathf.Min(w, h) * 0.5f);
-            Painter2D p = ctx.painter2D;
-            p.lineCap = LineCap.Round;
-            p.lineWidth = 1.15f;
-            p.strokeColor = kind == ButtonKind.Primary ? new Color(1f, 1f, 1f, 0.50f) : new Color(1f, 1f, 1f, 0.28f);
-            p.BeginPath();
-            float rr = Mathf.Max(0f, rad - 0.6f);
-            if (rr > 0.5f)
-            {
-                p.MoveTo(new Vector2(0.6f + rr, 0.8f));
-                p.LineTo(new Vector2(w - 0.6f - rr, 0.8f));
-            }
-            else
-            {
-                p.MoveTo(new Vector2(2f, 0.8f));
-                p.LineTo(new Vector2(w - 2f, 0.8f));
-            }
-            p.Stroke();
-        }
-
         void Refresh()
         {
             Color bg = Color.clear, fg = DesignTokens.Text1, iconColor = DesignTokens.Text2;
@@ -164,42 +133,48 @@ namespace Evo.UnityLayer
             switch (kind)
             {
                 case ButtonKind.Primary:
-                    bg = disabled ? DesignTokens.Bg2 : (pressed ? DesignTokens.AccentPressed : (hover ? DesignTokens.AccentText : DesignTokens.Accent));
+                    bg = disabled ? DesignTokens.Bg2 : (pressed ? DesignTokens.AccentPressed : (hover ? Color.white : DesignTokens.Accent));
                     fg = disabled ? DesignTokens.TextDisabled : DesignTokens.OnAccent;
+                    iconColor = fg;
+                    break;
+                case ButtonKind.Danger:
+                    bg = disabled ? DesignTokens.Bg2 : (pressed ? DesignTokens.DangerPressed : (hover ? DesignTokens.DangerHover : DesignTokens.Danger));
+                    fg = disabled ? DesignTokens.TextDisabled : Color.white;
                     iconColor = fg;
                     break;
                 case ButtonKind.Secondary:
                     bool activeSec = toggled || selected;
                     bg = disabled ? DesignTokens.GlassInset
                         : (pressed ? DesignTokens.Bg4
-                        : (activeSec ? DesignTokens.AccentSubtle
+                        : (activeSec ? DesignTokens.ActivePill
                         : (hover ? DesignTokens.Bg3 : DesignTokens.Bg2)));
-                    fg = disabled ? DesignTokens.TextDisabled : (activeSec ? DesignTokens.AccentText : DesignTokens.Text1);
-                    iconColor = customIconTint.HasValue && !disabled && !activeSec ? customIconTint.Value : fg;
-                    borderColor = disabled ? DesignTokens.Border : (activeSec ? DesignTokens.WithAlpha(DesignTokens.Accent, 0.55f) : DesignTokens.BorderStrong);
+                    fg = disabled ? DesignTokens.TextDisabled : (activeSec ? DesignTokens.Text1 : DesignTokens.Text2);
+                    if (hover && !disabled && !activeSec) fg = DesignTokens.Text1;
+                    iconColor = customIconTint.HasValue && !disabled && !activeSec ? customIconTint.Value : (activeSec ? DesignTokens.AccentText : fg);
+                    borderColor = disabled ? DesignTokens.Border : (activeSec ? DesignTokens.BorderStrong : DesignTokens.Border);
                     borderW = DesignTokens.BorderWidth;
                     break;
                 case ButtonKind.Icon:
                     bool activeIcon = toggled || selected;
                     bg = pressed ? DesignTokens.Bg4
-                        : (activeIcon && !disabled ? DesignTokens.AccentSubtle
+                        : (activeIcon && !disabled ? DesignTokens.ActivePill
                         : (hover && !disabled ? DesignTokens.Bg3 : Color.clear));
                     iconColor = disabled ? DesignTokens.TextDisabled
                         : (activeIcon ? DesignTokens.AccentText
                         : (customIconTint.HasValue ? customIconTint.Value
                         : (hover ? DesignTokens.Text1 : DesignTokens.Text2)));
-                    fg = activeIcon ? DesignTokens.AccentText : (hover ? DesignTokens.Text1 : DesignTokens.Text2);
+                    fg = iconColor;
                     if (activeIcon && !disabled)
                     {
-                        borderColor = DesignTokens.WithAlpha(DesignTokens.Accent, 0.45f);
+                        borderColor = DesignTokens.BorderStrong;
                         borderW = 1f;
                     }
                     break;
                 case ButtonKind.Tab:
                     bg = pressed ? DesignTokens.Bg4
-                        : (selected ? DesignTokens.Bg3
-                        : (hover && !disabled ? DesignTokens.WithAlpha(DesignTokens.Bg3, 0.40f) : Color.clear));
-                    fg = selected ? DesignTokens.Text1 : (hover ? DesignTokens.Text1 : DesignTokens.Text2);
+                        : (selected ? DesignTokens.ActivePill
+                        : (hover && !disabled ? DesignTokens.Bg2 : Color.clear));
+                    fg = selected ? DesignTokens.Text1 : (hover ? DesignTokens.Text2 : DesignTokens.Text3);
                     iconColor = selected ? DesignTokens.AccentText : fg;
                     if (selected)
                     {
@@ -213,15 +188,13 @@ namespace Evo.UnityLayer
             this.Border(borderColor, borderW);
             if (label != null) label.style.color = fg;
             if (icon != null) icon.Tint = iconColor;
-            MarkDirtyRepaint();
         }
 
-        /// <summary>Adjusts outer ends for segmented controls.</summary>
         public void RoundEnds(bool left, bool right)
         {
             float r = DesignTokens.Radius - 2;
-            style.borderTopLeftRadius = style.borderBottomLeftRadius = left ? r : 6;
-            style.borderTopRightRadius = style.borderBottomRightRadius = right ? r : 6;
+            style.borderTopLeftRadius = style.borderBottomLeftRadius = left ? r : 4;
+            style.borderTopRightRadius = style.borderBottomRightRadius = right ? r : 4;
         }
     }
 }

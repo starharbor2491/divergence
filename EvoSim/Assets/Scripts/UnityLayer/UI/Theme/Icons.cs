@@ -3,7 +3,6 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>Every icon of DESIGN.md, drawn on a 24 by 24 grid with Painter2D. There are no image files.</summary>
     public static class Icons
     {
         public static readonly string[] Names =
@@ -13,10 +12,9 @@ namespace Evo.UnityLayer
             "tab-traits", "tab-species", "tab-tree", "tab-stats",
             "heat-wave", "ice-age", "famine", "food-bloom", "toxin-spill",
             "status-good", "status-warning", "status-critical", "status-serious", "glyph-branch",
-            "fit", "notes"
+            "fit", "notes", "wave", "bolt"
         };
 
-        /// <summary>Draws an icon with its top left corner at the origin, scaled so that 24 units equal size.</summary>
         public static void Draw(Painter2D p, string name, Color color, float size, bool on = false)
         {
             var d = new Pen(p, color, size / 24f);
@@ -39,8 +37,9 @@ namespace Evo.UnityLayer
                     d.Round(4, 5, 16, 14, 2); d.Line(false, 4, 10, 20, 10); d.Line(false, 4, 14.5f, 20, 14.5f); d.Line(false, 10, 5, 10, 19);
                     break;
                 case "screenshot":
-                    d.Line(false, 4, 9, 4, 4, 9, 4); d.Line(false, 15, 4, 20, 4, 20, 9);
-                    d.Line(false, 20, 15, 20, 20, 15, 20); d.Line(false, 9, 20, 4, 20, 4, 15); d.Circle(12, 12, 3.2f);
+                    d.Round(3.5f, 7.5f, 17f, 11.5f, 2.2f);
+                    d.Line(false, 8.5f, 7.5f, 10f, 5f, 14f, 5f, 15.5f, 7.5f);
+                    d.Circle(12f, 13.2f, 3.1f);
                     break;
                 case "fit":
                     d.Line(false, 4, 9, 4, 4, 9, 4); d.Line(false, 15, 4, 20, 4, 20, 9);
@@ -52,7 +51,17 @@ namespace Evo.UnityLayer
                     d.FillCircle(12, 8, 1.2f);
                     d.Line(false, 12, 11.5f, 12, 16.5f);
                     break;
-                case "help": d.Circle(12, 12, 9); break;
+                case "wave":
+                    d.Wave(4, 10, 20, 10);
+                    d.Wave(4, 15, 20, 15);
+                    break;
+                case "bolt":
+                    d.Line(true, 13, 3, 6, 13, 12, 13, 11, 21, 18, 11, 12, 11);
+                    break;
+                case "help":
+                    d.Circle(12, 12, 9);
+                    d.Question();
+                    break;
                 case "panel":
                     d.Round(3, 5, 18, 14, 2.5f); d.Line(false, 14.5f, 5, 14.5f, 19);
                     if (on) d.FillRound(14.5f, 5, 6.5f, 14, 1.5f);
@@ -67,7 +76,7 @@ namespace Evo.UnityLayer
                 case "restart": d.Arc(12, 12, 7, -60, 240); d.Line(false, 17, 3, 17.5f, 8, 12.5f, 8); break;
                 case "tab-traits": d.Line(false, 4, 8, 20, 8); d.Line(false, 4, 16, 20, 16); d.FillCircle(9, 8, 2.5f); d.FillCircle(15, 16, 2.5f); break;
                 case "tab-species": d.Circle(9, 12, 5); d.Circle(15, 12, 5); break;
-                case "tab-tree": d.Branch(); break;
+                case "tab-tree": d.Line(false, 4, 12, 10, 12, 10, 6, 20, 6); d.Line(false, 10, 12, 10, 18, 20, 18); break;
                 case "tab-stats": d.FillRound(5, 12, 3, 7, 1); d.FillRound(10.5f, 6, 3, 13, 1); d.FillRound(16, 9, 3, 10, 1); break;
                 case "heat-wave":
                     d.Circle(12, 12, 4);
@@ -78,7 +87,10 @@ namespace Evo.UnityLayer
                     }
                     break;
                 case "ice-age": d.Line(false, 12, 3, 12, 21); d.Line(false, 4.2f, 7.5f, 19.8f, 16.5f); d.Line(false, 19.8f, 7.5f, 4.2f, 16.5f); break;
-                case "famine": d.FillCircle(12, 12, 3.5f); d.Line(false, 5, 19, 19, 5); break;
+                case "famine":
+                    d.Circle(12, 12, 7.5f);
+                    d.Line(false, 6.7f, 17.3f, 17.3f, 6.7f);
+                    break;
                 case "food-bloom": d.FillCircle(8, 14, 2.6f); d.FillCircle(15, 15, 2.6f); d.FillCircle(12, 8, 2.6f); break;
                 case "toxin-spill": d.Drop(); break;
                 case "status-good": d.Circle(12, 12, 9); d.Line(false, 8, 12.5f, 11, 15.5f, 16, 9); break;
@@ -98,7 +110,7 @@ namespace Evo.UnityLayer
             public Pen(Painter2D p, Color color, float k)
             {
                 this.p = p; this.color = color; this.k = k;
-                p.lineWidth = 1.9f * k;
+                p.lineWidth = 1.85f * k;
                 p.lineCap = LineCap.Round;
                 p.lineJoin = LineJoin.Round;
                 p.strokeColor = color;
@@ -171,6 +183,26 @@ namespace Evo.UnityLayer
                 p.Stroke();
             }
 
+            public void Question()
+            {
+                p.BeginPath();
+                p.MoveTo(V(9.6f, 9.3f));
+                p.BezierCurveTo(V(9.6f, 7.2f), V(14.5f, 7.2f), V(14.5f, 9.6f));
+                p.BezierCurveTo(V(14.5f, 11.4f), V(12f, 11.7f), V(12f, 13.6f));
+                p.Stroke();
+                FillCircle(12f, 16.6f, 1.05f);
+            }
+
+            public void Wave(float x0, float y0, float x1, float y1)
+            {
+                float mid = (x0 + x1) * 0.5f;
+                p.BeginPath();
+                p.MoveTo(V(x0, y0));
+                p.BezierCurveTo(V(x0 + 4, y0 - 3), V(mid - 2, y0 - 3), V(mid, y0));
+                p.BezierCurveTo(V(mid + 2, y0 + 3), V(x1 - 4, y1 + 3), V(x1, y1));
+                p.Stroke();
+            }
+
             public void Drop()
             {
                 p.BeginPath();
@@ -184,7 +216,7 @@ namespace Evo.UnityLayer
 
             public void Branch()
             {
-                p.lineWidth = 2.2f * k;
+                p.lineWidth = 2.1f * k;
                 p.BeginPath();
                 p.MoveTo(V(4, 12)); p.LineTo(V(10, 12));
                 p.BezierCurveTo(V(14, 12), V(15, 6), V(20, 6));
@@ -198,14 +230,12 @@ namespace Evo.UnityLayer
         }
     }
 
-    /// <summary>A VisualElement that draws one named icon in its current Tint. Change Tint or State and it repaints.</summary>
     public class IconElement : VisualElement
     {
         string icon;
         Color tint = DesignTokens.Text2;
         bool on;
         float size;
-        Label questionMark;
 
         public IconElement(string icon, float size = 18f)
         {
@@ -216,19 +246,6 @@ namespace Evo.UnityLayer
             style.height = size;
             style.flexShrink = 0;
             generateVisualContent += OnGenerate;
-            if (icon == "help")
-            {
-                questionMark = new Label("?");
-                questionMark.pickingMode = PickingMode.Ignore;
-                Ui.Type(questionMark, FontRole.Bold, DesignTokens.TypeLabelSize);
-                questionMark.style.position = Position.Absolute;
-                questionMark.style.left = 0; questionMark.style.top = 0;
-                questionMark.style.width = size; questionMark.style.height = size;
-                questionMark.style.unityTextAlign = TextAnchor.MiddleCenter;
-                questionMark.style.paddingTop = 0; questionMark.style.paddingBottom = 0;
-                questionMark.style.marginTop = 0; questionMark.style.marginBottom = 0;
-                Add(questionMark);
-            }
         }
 
         public string Icon
@@ -244,7 +261,6 @@ namespace Evo.UnityLayer
             {
                 if (tint == value) return;
                 tint = value;
-                if (questionMark != null) questionMark.style.color = value;
                 MarkDirtyRepaint();
             }
         }

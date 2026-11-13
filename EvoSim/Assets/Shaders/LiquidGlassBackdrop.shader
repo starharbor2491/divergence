@@ -1,4 +1,3 @@
-// Real-time Apple Liquid Glass backdrop: rounded SDF lens, 13-tap frosted blur, curved bevel refraction & subtle dispersion.
 Shader "Evo/LiquidGlassBackdrop"
 {
     Properties
@@ -92,36 +91,25 @@ Shader "Evo/LiquidGlassBackdrop"
                 float2 grad = (q.x > 0.0 && q.y > 0.0) ? normalize(max(q, 1e-4)) : ((q.x > q.y) ? float2(1.0, 0.0) : float2(0.0, 1.0));
                 grad *= sign(p);
 
-                float bevel = saturate(1.0 + dist / 18.0);
+                float bevel = saturate(1.0 + dist / 14.0);
                 float bevelCurve = bevel * bevel;
                 float refractAmt = input.meta.w;
 
                 float2 suv = input.screenPos.xy / max(1e-5, input.screenPos.w);
-                float2 lensShift = -grad * (bevelCurve * 0.015 * refractAmt);
-                float blurWeight = lerp(1.0, 0.35, bevelCurve * 0.65);
+                float2 lensShift = -grad * (bevelCurve * 0.012 * refractAmt);
+                float blurWeight = lerp(1.0, 0.45, bevelCurve * 0.55);
 
                 half3 blurred = SampleFrost(clamp(suv + lensShift, 0.002, 0.998), blurWeight);
-                half rEdge = SAMPLE_TEXTURE2D(_BackdropTex, sampler_BackdropTex, clamp(suv + lensShift * 1.28, 0.002, 0.998)).r;
-                half bEdge = SAMPLE_TEXTURE2D(_BackdropTex, sampler_BackdropTex, clamp(suv + lensShift * 0.72, 0.002, 0.998)).b;
-                blurred.r = lerp(blurred.r, rEdge, bevelCurve * 0.28h);
-                blurred.b = lerp(blurred.b, bEdge, bevelCurve * 0.28h);
-
-                // Boost vibrancy slightly like Apple optical material
                 half luma = dot(blurred, half3(0.2126h, 0.7152h, 0.0722h));
-                blurred = max(half3(0, 0, 0), lerp(half3(luma, luma, luma), blurred, 1.32h) * 1.15h);
+                blurred = max(half3(0, 0, 0), lerp(half3(luma, luma, luma), blurred, 1.18h) * 1.10h);
 
-                // Composite pearlescent frosted glass body over blurred/refracted world
-                half3 glassTint = input.color.rgb;
-                half tintAlpha = input.color.a;
-                half3 col = lerp(blurred, glassTint, tintAlpha);
-                col += half3(0.76h, 0.91h, 1.0h) * 0.042h;
+                half3 col = lerp(blurred, input.color.rgb, input.color.a);
+                col += half3(1.0h, 1.0h, 1.0h) * 0.026h;
 
-                // Subtle upper-left specular liquid sheen & curved meniscus glow
-                float topGlow = saturate((input.uv.y - 0.50) / 0.50) * saturate(1.15 - input.uv.x * 0.50);
-                col += half3(0.86h, 0.96h, 1.0h) * (topGlow * 0.065h);
-                float lightDir = dot(normalize(float2(-0.65, 0.76)), grad);
-                float rimLight = bevelCurve * bevel * (0.11 + 0.11 * lightDir);
-                col += lerp(half3(0.35h, 0.92h, 0.82h), half3(1.0h, 1.0h, 1.0h), saturate(lightDir * 0.5 + 0.5)) * rimLight;
+                float topGlow = saturate((input.uv.y - 0.55) / 0.45) * saturate(1.1 - input.uv.x * 0.4);
+                col += half3(1.0h, 1.0h, 1.0h) * (topGlow * 0.035h);
+                float lightDir = dot(normalize(float2(-0.6, 0.8)), grad);
+                col += half3(1.0h, 1.0h, 1.0h) * (bevelCurve * bevel * (0.06 + 0.06 * lightDir));
 
                 return half4(saturate(col), mask);
             }

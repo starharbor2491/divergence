@@ -4,7 +4,6 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>Liquid Glass "Population extinct" summary card over the frozen World (DESIGN 6.4).</summary>
     public sealed class ExtinctionOverlay : VisualElement
     {
         readonly Label runTime, maxGeneration, speciesEver;
@@ -24,28 +23,21 @@ namespace Evo.UnityLayer
             Add(card);
 
             VisualElement head = Ui.Row();
-            var badge = new VisualElement();
-            badge.Size(44, 44);
-            badge.Round(14);
-            badge.style.backgroundColor = DesignTokens.WithAlpha(DesignTokens.StatusCritical, 0.18f);
-            badge.Border(DesignTokens.WithAlpha(DesignTokens.StatusCritical, 0.45f), 1);
-            badge.style.alignItems = Align.Center;
-            badge.style.justifyContent = Justify.Center;
-            badge.style.marginRight = DesignTokens.Space3;
-            badge.Add(new IconElement("status-critical", 24f) { Tint = DesignTokens.StatusCritical });
-            head.Add(badge);
-
-            VisualElement titleCol = Ui.Column();
-            titleCol.Add(Ui.Heading(UiText.PopulationExtinct, DesignTokens.Text1));
-            titleCol.Add(Ui.Caption("Every Cell in the World ran out of energy or succumbed to Pressures.", DesignTokens.Text2));
-            head.Add(titleCol);
+            var icon = new IconElement("status-critical", 24f) { Tint = DesignTokens.StatusCritical };
+            icon.style.marginRight = DesignTokens.Space3;
+            head.Add(icon);
+            head.Add(Ui.Heading(UiText.PopulationExtinct, DesignTokens.Text1));
             card.Add(head);
 
-            VisualElement stats = Ui.Row();
+            Label sub = Ui.Body("Every lineage in this run died out.", DesignTokens.Text2);
+            sub.style.marginTop = DesignTokens.Space2;
+            card.Add(sub);
+
+            VisualElement stats = Ui.Column();
             stats.style.marginTop = DesignTokens.Space4;
-            runTime = StatPill(stats, "Run time", false);
-            maxGeneration = StatPill(stats, "Highest Gen", true);
-            speciesEver = StatPill(stats, "Species ever", true);
+            runTime = Row(stats, "Run duration");
+            maxGeneration = Row(stats, "Highest generation");
+            speciesEver = Row(stats, "Total species", false);
             card.Add(stats);
 
             VisualElement buttons = Ui.Row();
@@ -56,7 +48,7 @@ namespace Evo.UnityLayer
             var csv = new EvoButton(ButtonKind.Secondary, "Export CSV", "csv", "csv");
             csv.style.marginRight = DesignTokens.Space2;
             csv.Clicked += app.ExportCsv;
-            var home = new EvoButton(ButtonKind.Secondary, "Menu", "home", "home");
+            var home = new EvoButton(ButtonKind.Secondary, "Setup", "home", "home");
             home.style.marginRight = DesignTokens.Space2;
             home.Clicked += app.GoToSetup;
             buttons.Add(home);
@@ -65,19 +57,21 @@ namespace Evo.UnityLayer
             card.Add(buttons);
         }
 
-        static Label StatPill(VisualElement parent, string name, bool gap)
+        static Label Row(VisualElement parent, string name, bool divider = true)
         {
-            VisualElement pill = Ui.Column();
-            pill.style.flexGrow = 1;
-            pill.style.flexBasis = 0;
-            if (gap) pill.style.marginLeft = DesignTokens.Space2;
-            LiquidGlass.StyleWell(pill, DesignTokens.Radius);
-            pill.Pad(DesignTokens.Space3);
-            pill.Add(Ui.Caption(name, DesignTokens.Text3));
-            Label v = Ui.Mono("", DesignTokens.Text1, DesignTokens.TypeTitleSize);
-            v.style.marginTop = 2;
-            pill.Add(v);
-            parent.Add(pill);
+            VisualElement row = Ui.Row();
+            row.style.height = 30;
+            if (divider)
+            {
+                row.style.borderBottomWidth = 1;
+                row.style.borderBottomColor = DesignTokens.Border;
+            }
+            Label n = Ui.Body(name, DesignTokens.Text2);
+            n.style.flexGrow = 1;
+            row.Add(n);
+            Label v = Ui.Mono("", DesignTokens.Text1);
+            row.Add(v);
+            parent.Add(row);
             return v;
         }
 

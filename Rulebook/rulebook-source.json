@@ -15,17 +15,18 @@
  },
  "styles": {
   "title": {
-   "fontSize": 26,
-   "bold": true
+   "fontSize": 24,
+   "bold": true,
+   "color": "#0C1117"
   },
   "sub": {
-   "fontSize": 11,
-   "color": "#555555"
+   "fontSize": 10.5,
+   "color": "#525B68"
   },
   "h2": {
-   "fontSize": 11.5,
+   "fontSize": 11,
    "bold": true,
-   "color": "#1F4E9C",
+   "color": "#26574E",
    "margin": [
     0,
     8,
@@ -34,17 +35,18 @@
    ]
   },
   "body": {
-   "fontSize": 9.5,
-   "lineHeight": 1.2
+   "fontSize": 9.3,
+   "lineHeight": 1.22,
+   "color": "#1E242D"
   }
  },
  "content": [
   {
-   "text": "divergence",
+   "text": "Divergence",
    "style": "title"
   },
   {
-   "text": "a natural selection simulation. Rulebook",
+   "text": "Natural selection simulation — Quick reference",
    "style": "sub",
    "margin": [
     0,
@@ -56,10 +58,10 @@
   {
    "text": [
     {
-     "text": "To start: ",
+     "text": "Getting started: ",
      "bold": true
     },
-    "open the hosted link, choose a Preset (or type a Seed), and press Start. Press Pause to freeze, 1 to 4 for speed. Click the World to inspect a Cell. In the side panel, read the Traits tab to see how a Trait changes over generations."
+    "open the hosted link, pick a starting environment (Mild world, Cold gradient, Toxic basin, or Rapid evolution), and click Start run. Use Space to pause, 1–4 to change speed, click any cell to inspect its traits and brain, or trigger events from the bottom bar."
    ],
    "style": "body",
    "margin": [
@@ -75,11 +77,11 @@
      "width": "*",
      "stack": [
       {
-       "text": "What this is",
+       "text": "Overview",
        "style": "h2"
       },
       {
-       "text": "Divergence is a model of natural selection. Cells live in a World with Food, Toxin and varying Temperature. Cells that suit the World survive and reproduce, so their Traits become more common over generations. Over time the population can split into Species.",
+       "text": "Divergence simulates natural selection in continuous 2D space. Cells move, eat food pellets, avoid drifting toxin, and cope with local temperature. Individuals better suited to their surroundings survive longer and leave more offspring, shifting population traits over generations until lineages split into distinct species.",
        "style": "body"
       },
       {
@@ -87,45 +89,37 @@
        "style": "h2"
       },
       {
-       "text": "Drag to move the view. Scroll to zoom. Click a Cell to inspect it and see its sense range. Space pauses. Keys 1 to 4 change speed. F fits the World. T boosts the thermal map. Tab hides the charts panel. Escape cancels or closes.",
+       "text": "Drag anywhere in the water to pan and scroll to zoom around the cursor. Click any living cell to inspect its traits, energy, sense radius, and live neural outputs. Space pauses; 1–4 set speed; T toggles thermal overlay; F resets view; Tab hides charts; Escape cancels or closes.",
        "style": "body"
       },
       {
-       "text": "Settings",
+       "text": "World setup",
        "style": "h2"
       },
       {
-       "text": "The Seed fixes the World. Food abundance, Temperature range, zone scale, Toxin level and mutation rate shape it. Presets fill these in. The same Seed and settings always make the same starting World.",
+       "text": "A seed fixes the initial terrain and starting population so identical settings always begin from the same world. Presets configure ready-made environments, or you can adjust food abundance, temperature contrast, climate scale, starting toxin, and mutation rate manually.",
        "style": "body"
       },
       {
-       "text": "The World",
+       "text": "Environment",
        "style": "h2"
       },
       {
-       "text": "Temperature varies smoothly from cold blue currents to hot coral zones. Food appears as glowing green pellets, more in some places than others. Toxin is a set of pink particles that drift, attract each other slightly and fade.",
+       "text": "Temperature varies smoothly across the water from cool blue currents to warm coral regions. Food spawns more densely in fertile patches, while toxin particles drift, attract slightly, and gradually decay.",
        "style": "body"
       },
       {
-       "text": "Traits",
+       "text": "Inherited traits",
        "style": "h2"
       },
       {
-       "text": "Each Cell inherits ten Traits: size, speed, sense range, preferred Temperature, Temperature tolerance, Toxin resistance, diet, reproduction threshold, sexual tendency and choosiness. Traits have benefits and trade-offs, so no Cell is best everywhere. Hover a Trait for its meaning, units and trade-off.",
-       "style": "body"
-      },
-      {
-       "text": "What the model simplifies",
-       "style": "h2"
-      },
-      {
-       "text": "Species never merge once they have split. Cells live in an open World with a wall, not on a grid. Every Run is repeatable: the same Seed and settings start the same World, but later births involve chance, and Events you place change the outcome.",
+       "text": "Every cell inherits ten numerical traits (size, speed, sense range, preferred temperature, temperature tolerance, toxin resistance, diet, reproduction threshold, sexual tendency, and choosiness) plus a 100-weight neural brain. Each trait carries an energy or survival trade-off.",
        "style": "body"
       }
      ]
     },
     {
-     "width": 14,
+     "width": 16,
      "text": ""
     },
     {
@@ -136,49 +130,41 @@
        "style": "h2"
       },
       {
-       "text": "Below sexual tendency 0.50, a Cell divides at its energy threshold. At 0.50 or above, it needs a sexual partner within sense range with enough energy and mutual acceptance under both Cells' choosiness. Both pay energy; crossover takes each Trait and Brain weight from either parent, then mutation can make small random changes. Without a partner it waits; it never divides alone.",
+       "text": "Cells with sexual tendency below 0.50 divide on their own once they store enough energy. At 0.50 or above, two compatible neighbours within sense range must both have sufficient energy to combine genomes, with small random mutations applied at birth.",
        "style": "body"
       },
       {
-       "text": "Species and colours",
+       "text": "Species & colour",
        "style": "h2"
       },
       {
-       "text": "Cells begin white. A Cell's colour comes from its Genome, so similar Cells have similar colours. Grazers show a green inner core while high-diet hunters grow warm amber cores and front mandibles. A Species is a group of Cells whose Genomes are close together; a new Species appears when a group drifts far enough apart.",
+       "text": "Founders begin near white. As mutations accumulate in traits and brain weights, genome colours shift smoothly in perceptual colour space. Grazers show a green inner organelle, while high-diet hunters develop warm amber cores and front mandibles.",
        "style": "body"
       },
       {
-       "text": "Charts",
+       "text": "Reading charts",
        "style": "h2"
       },
       {
-       "text": "Traits shows one Trait over time or mean Generation, with a dashed line marking the Founders' starting average. Species shows the twenty Species with highest historical peaks; the rest form Other. Tree shows which Species split from which. Stats shows deaths in the latest ten minutes; legend totals cover the whole Run. Sexual share counts living Cells with sexual tendency at least 0.50, not births.",
+       "text": "Traits plots mean ± 1 SD (dashed line marks founders) and value bands against time or mean generation. Species stacks the top 20 lineages by peak size; click any living species to spotlight it. Tree shows speciation splits; Stats tracks live rates and causes of death.",
        "style": "body"
       },
       {
-       "text": "Events",
+       "text": "Saving & data",
        "style": "h2"
       },
       {
-       "text": "Events change the World while a Run is going. Pick an Event from the bottom dock, set its size, then click the World to place it. Whole World applies without placement; for toxin spills, radius still sets quantity.",
+       "text": "Save downloads a JSON snapshot that resumes identically when loaded. Export CSV downloads trait time-series and species population tables for plotting or lab analysis. Save PNG captures the window.",
        "style": "body"
       },
       {
-       "text": "Save and exports",
-       "style": "h2"
-      },
-      {
-       "text": "Save requests a Run download. Load restores a valid saved file. Export CSV requests two data files; your browser may ask permission for multiple downloads. Screenshot requests a PNG. Check your browser's downloads; the app cannot confirm files reached disk.",
-       "style": "body"
-      },
-      {
-       "text": "The five Events",
+       "text": "Environmental events",
        "style": "h2"
       },
       {
        "table": {
         "widths": [
-         62,
+         64,
          "*"
         ],
         "body": [
@@ -187,35 +173,35 @@
            "text": "Heat wave",
            "bold": true
           },
-          "Raises Temperature inside the circle, then lets it return to normal."
+          "Temporarily raises local temperature before easing back to baseline."
          ],
          [
           {
            "text": "Ice age",
            "bold": true
           },
-          "Lowers Temperature inside the circle, then lets it return to normal."
+          "Temporarily lowers local temperature before easing back to baseline."
          ],
          [
           {
            "text": "Famine",
            "bold": true
           },
-          "Removes most Food inside the circle and slows new Food there for a while."
+          "Clears most food in the target area and slows regrowth while active."
          ],
          [
           {
            "text": "Food bloom",
            "bold": true
           },
-          "Adds extra Food inside the circle for a while."
+          "Spawns dense extra food across the target area while active."
          ],
          [
           {
            "text": "Toxin spill",
            "bold": true
           },
-          "Releases Toxin inside the circle. It spreads slowly and fades."
+          "Releases a cloud of toxin particles that slowly disperses and decays."
          ]
         ]
        },
@@ -227,9 +213,9 @@
    ]
   },
   {
-   "text": "Window size: at least 1280 by 720. Works in recent Chrome, Edge, Firefox and Safari.",
+   "text": "Minimum window size: 1280 × 720. Supported in recent Chrome, Edge, Firefox, and Safari.",
    "fontSize": 8.5,
-   "color": "#555555",
+   "color": "#525B68",
    "margin": [
     0,
     12,
