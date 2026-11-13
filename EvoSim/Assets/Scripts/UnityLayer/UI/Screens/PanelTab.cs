@@ -15,33 +15,33 @@ namespace Evo.UnityLayer
             this.app = app;
             style.flexDirection = FlexDirection.Column;
             style.flexShrink = 0;
-            this.Pad(DesignTokens.Space4);
+            this.Pad(DesignTokens.Space2, DesignTokens.Space4, DesignTokens.Space4, DesignTokens.Space4);
         }
 
         public virtual void Bind(Simulation s) { sim = s; Refresh(); }
 
         public abstract void Refresh();
 
-        /// <summary>Title in type-label with the explanation tooltip, caption underneath, then the chart (DESIGN 5.1).</summary>
+        /// <summary>Section header with explanation tooltip, plain-English caption, and chart/content block.</summary>
         protected static VisualElement Section(string title, string unit, string tipId, string caption, VisualElement content)
         {
             VisualElement s = Ui.Column();
             s.style.flexShrink = 0;
-            s.style.marginTop = DesignTokens.Space5;
+            s.style.marginTop = DesignTokens.Space4;
             VisualElement head = Ui.Row();
-            Label t = Ui.LabelText(title);
+            Label t = Ui.Subhead(title, DesignTokens.Text1);
             t.pickingMode = PickingMode.Position;
             Tooltips.Attach(t, tipId);
             head.Add(t);
             if (!string.IsNullOrEmpty(unit))
             {
-                Label u = Ui.Caption(unit);
+                Label u = Ui.Caption(unit, DesignTokens.AccentText);
                 u.style.marginLeft = DesignTokens.Space2;
                 head.Add(u);
             }
             s.Add(head);
-            Label c = Ui.Caption(caption);
-            c.style.marginTop = DesignTokens.Space1;
+            Label c = Ui.Caption(caption, DesignTokens.Text2);
+            c.style.marginTop = 3;
             c.style.marginBottom = DesignTokens.Space2;
             s.Add(c);
             s.Add(content);

@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>The menu under the Events button: five Events, each with an icon, a name and a one-line description (DESIGN 6.3).</summary>
+    /// <summary>Liquid Glass popover menu of the five Events, plus the Event configurator modal.</summary>
     public static class EventsMenu
     {
         static VisualElement catcher;
@@ -16,6 +16,18 @@ namespace Evo.UnityLayer
         {
             if (catcher != null && catcher.parent != null) catcher.parent.Remove(catcher);
             catcher = null;
+        }
+
+        public static Color AccentFor(EventKind kind)
+        {
+            switch (kind)
+            {
+                case EventKind.HeatWave: return DesignTokens.TempHot;
+                case EventKind.IceAge: return DesignTokens.TempCold;
+                case EventKind.Famine: return DesignTokens.StatusWarning;
+                case EventKind.FoodBloom: return DesignTokens.WorldFood;
+                default: return DesignTokens.WorldToxin;
+            }
         }
 
         public static void Open(VisualElement anchor, Action<EventKind> chosen)
@@ -30,31 +42,40 @@ namespace Evo.UnityLayer
 
             var card = new VisualElement();
             card.style.position = Position.Absolute;
-            card.style.width = 420;
-            card.style.backgroundColor = DesignTokens.Bg2;
-            card.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
-            card.Round(DesignTokens.Radius);
+            card.style.width = 400;
+            LiquidGlass.Attach(card, DesignTokens.RadiusPanel, GlassTone.Modal);
+            card.Pad(DesignTokens.Space2);
             Rect a = new Rect(overlay.WorldToLocal(anchor.worldBound.position), anchor.worldBound.size);
-            card.style.left = Mathf.Max(DesignTokens.Space2, a.xMax - 420f);
-            card.style.top = a.yMax + 2;
+            card.style.left = Mathf.Max(DesignTokens.Space2, a.xMax - 400f);
+            card.style.top = a.yMax + 6;
             card.RegisterCallback<PointerDownEvent>(e => e.StopPropagation());
             catcher.Add(card);
 
             for (int i = 0; i < EventInfo.Ids.Length; i++)
             {
                 EventKind kind = (EventKind)i;
+                Color ec = AccentFor(kind);
                 VisualElement row = Ui.Row();
-                row.style.minHeight = 56;
+                row.style.minHeight = 54;
                 row.Pad(DesignTokens.Space2, DesignTokens.Space3);
+                row.Round(DesignTokens.Radius);
                 row.style.backgroundColor = Color.clear;
-                var icon = new IconElement(EventInfo.Ids[i], 20f) { Tint = DesignTokens.Text2 };
-                icon.style.marginRight = DesignTokens.Space3;
-                icon.style.flexShrink = 0;
-                row.Add(icon);
+
+                var badge = new VisualElement();
+                badge.Size(34, 34);
+                badge.Round(10);
+                badge.style.backgroundColor = DesignTokens.WithAlpha(ec, 0.18f);
+                badge.style.alignItems = Align.Center;
+                badge.style.justifyContent = Justify.Center;
+                badge.style.marginRight = DesignTokens.Space3;
+                badge.style.flexShrink = 0;
+                badge.Add(new IconElement(EventInfo.Ids[i], 18f) { Tint = ec });
+                row.Add(badge);
+
                 VisualElement text = Ui.Column();
                 text.style.flexShrink = 1;
                 text.Add(Ui.LabelText(EventInfo.Names[i]));
-                text.Add(Ui.Caption(Short(UiText.Body("event-" + EventInfo.Ids[i]))));
+                text.Add(Ui.Caption(UiText.Body("event-" + EventInfo.Ids[i]), DesignTokens.Text2));
                 row.Add(text);
                 row.RegisterCallback<PointerEnterEvent>(e => row.style.backgroundColor = DesignTokens.Bg3);
                 row.RegisterCallback<PointerLeaveEvent>(e => row.style.backgroundColor = Color.clear);
@@ -67,14 +88,9 @@ namespace Evo.UnityLayer
                 card.Add(row);
             }
         }
-
-        static string Short(string s) { return s; }
     }
 
-    /// <summary>
-    /// Event dialog (DESIGN 4.9, 6.3): radius, intensity and duration where they apply, a Whole World checkbox, Cancel and Place.
-    /// Place closes the dialog and arms placement; with Whole World the button reads Apply and acts at once.
-    /// </summary>
+    /// <summary>Liquid Glass Event dialog: radius, intensity/duration, Whole World checkbox, Cancel and Place/Apply.</summary>
     public sealed class EventDialog : VisualElement
     {
         readonly AppController app;
@@ -98,6 +114,7 @@ namespace Evo.UnityLayer
             IsOpen = true;
             this.Show(true);
             int k = (int)kind;
+            Color ec = EventsMenu.AccentFor(kind);
             var spec = new EventSpec
             {
                 Kind = kind,
@@ -108,17 +125,23 @@ namespace Evo.UnityLayer
 
             var dialog = new VisualElement();
             dialog.style.width = DesignTokens.DialogWidth;
-            dialog.style.backgroundColor = DesignTokens.Bg1;
-            dialog.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
-            dialog.Round(DesignTokens.Radius);
+            LiquidGlass.Attach(dialog, DesignTokens.RadiusPanel, GlassTone.Modal);
             dialog.Pad(DesignTokens.Space5);
             Add(dialog);
 
             VisualElement head = Ui.Row();
-            var icon = new IconElement(EventInfo.Ids[k], 24f) { Tint = DesignTokens.AccentText };
-            icon.style.marginRight = DesignTokens.Space3;
-            head.Add(icon);
-            Label title = Ui.Title(EventInfo.Names[k]);
+            var badge = new VisualElement();
+            badge.Size(40, 40);
+            badge.Round(12);
+            badge.style.backgroundColor = DesignTokens.WithAlpha(ec, 0.20f);
+            badge.Border(DesignTokens.WithAlpha(ec, 0.45f), 1);
+            badge.style.alignItems = Align.Center;
+            badge.style.justifyContent = Justify.Center;
+            badge.style.marginRight = DesignTokens.Space3;
+            badge.Add(new IconElement(EventInfo.Ids[k], 22f) { Tint = ec });
+            head.Add(badge);
+
+            Label title = Ui.Heading(EventInfo.Names[k], DesignTokens.Text1);
             title.pickingMode = PickingMode.Position;
             Tooltips.Attach(title, "event-" + EventInfo.Ids[k]);
             head.Add(title);
@@ -129,22 +152,28 @@ namespace Evo.UnityLayer
             dialog.Add(head);
 
             Label desc = Ui.Body(UiText.Body("event-" + EventInfo.Ids[k]), DesignTokens.Text2);
-            desc.style.marginTop = DesignTokens.Space2;
+            desc.style.marginTop = DesignTokens.Space3;
             desc.style.marginBottom = DesignTokens.Space4;
             dialog.Add(desc);
 
+            VisualElement well = new VisualElement();
+            LiquidGlass.StyleWell(well, DesignTokens.RadiusCard);
+            well.Pad(DesignTokens.Space4);
+            dialog.Add(well);
+
             var radius = new EvoSlider("Radius", "event-radius", 5f, 60f, 20f, 1f, v => Mathf.RoundToInt(v) + " units");
             radius.Changed += v => spec.Radius = v;
-            dialog.Add(radius);
+            well.Add(radius);
             if (kind == EventKind.ToxinSpill)
             {
-                Label amount = Ui.Caption("");
+                Label amount = Ui.Caption("", DesignTokens.Text2);
+                amount.style.marginTop = DesignTokens.Space1;
                 amount.pickingMode = PickingMode.Position;
                 Tooltips.Attach(amount, "event-toxin-amount");
                 Action updateAmount = () => amount.text = Mathf.RoundToInt(app.Sim.P.SpillParticlesPer10Radius * spec.Radius / 10f) + " Toxin particles requested (capacity may limit this).";
                 radius.Changed += v => updateAmount();
                 updateAmount();
-                dialog.Add(amount);
+                well.Add(amount);
             }
 
             if (EventInfo.HasIntensity(kind))
@@ -152,20 +181,20 @@ namespace Evo.UnityLayer
                 var intensity = new EvoSlider("Intensity", "event-intensity", EventInfo.MinIntensity, EventInfo.MaxIntensity,
                     EventInfo.DefaultIntensity(kind), 0.05f, v => (kind == EventKind.IceAge ? "-" : "+") + Ui.F(v, 2));
                 intensity.Changed += v => spec.Intensity = v;
-                intensity.style.marginTop = DesignTokens.Space4;
-                dialog.Add(intensity);
+                intensity.style.marginTop = DesignTokens.Space3;
+                well.Add(intensity);
             }
             if (EventInfo.HasDuration(kind))
             {
                 var duration = new EvoSlider("Duration", "event-duration", EventInfo.MinDuration(kind), EventInfo.MaxDuration(kind),
                     EventInfo.DefaultDuration(kind), 5f, v => Mathf.RoundToInt(v) + " s");
                 duration.Changed += v => spec.Duration = v;
-                duration.style.marginTop = DesignTokens.Space4;
-                dialog.Add(duration);
+                duration.style.marginTop = DesignTokens.Space3;
+                well.Add(duration);
             }
 
-            var whole = new EvoCheckbox("Whole World", "event-whole-world");
-            whole.style.marginTop = DesignTokens.Space4;
+            var whole = new EvoCheckbox("Apply to the Whole World at once", "event-whole-world");
+            whole.style.marginTop = DesignTokens.Space3;
             dialog.Add(whole);
 
             var msg = new Message("status-warning", "");
@@ -174,15 +203,15 @@ namespace Evo.UnityLayer
 
             VisualElement buttons = Ui.Row();
             buttons.style.justifyContent = Justify.FlexEnd;
-            buttons.style.marginTop = DesignTokens.Space5;
+            buttons.style.marginTop = DesignTokens.Space4;
             var cancel = new EvoButton(ButtonKind.Secondary, "Cancel", null, "event-cancel");
             cancel.Clicked += Close;
-            var place = new EvoButton(ButtonKind.Primary, "Place", null, "event-place");
+            var place = new EvoButton(ButtonKind.Primary, "Choose Spot in World", null, "event-place");
             place.style.marginLeft = DesignTokens.Space2;
             whole.Changed += v =>
             {
                 radius.Enabled = !v || kind == EventKind.ToxinSpill;
-                place.SetText(v ? "Apply" : "Place");
+                place.SetText(v ? "Apply Now" : "Choose Spot in World");
                 place.SetTip(v ? "event-apply" : "event-place");
             };
             place.Clicked += () =>

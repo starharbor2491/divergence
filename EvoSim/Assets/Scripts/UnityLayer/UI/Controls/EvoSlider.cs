@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>Slider with a label on the left and a readout on the right (DESIGN 4.3). Double-click resets to the default.</summary>
+    /// <summary>Liquid Glass slider with label on the left and tabular mono readout on the right. Double-click thumb resets.</summary>
     public sealed class EvoSlider : VisualElement
     {
         public event Action<float> Changed;
@@ -25,32 +25,33 @@ namespace Evo.UnityLayer
 
             VisualElement header = Ui.Row();
             header.style.height = DesignTokens.TypeLabelLine;
-            Label nameLabel = Ui.LabelText(name);
+            Label nameLabel = Ui.LabelText(name, DesignTokens.Text1);
             nameLabel.pickingMode = PickingMode.Position;
             Tooltips.Attach(nameLabel, tipId);
             header.Add(nameLabel);
             header.Add(Ui.Spacer());
-            valueLabel = Ui.Body("");
+            valueLabel = Ui.Mono("", DesignTokens.AccentText, DesignTokens.TypeLabelSize);
             header.Add(valueLabel);
             Add(header);
 
             area = new VisualElement();
-            area.style.height = 32;
-            area.style.marginTop = DesignTokens.Space2;
+            area.style.height = 30;
+            area.style.marginTop = DesignTokens.Space1;
             area.style.justifyContent = Justify.Center;
             Add(area);
 
             var track = new VisualElement();
             track.pickingMode = PickingMode.Ignore;
-            track.style.height = 4;
-            track.Round(2);
-            track.style.backgroundColor = DesignTokens.Bg3;
+            track.style.height = 6;
+            track.Round(3);
+            track.style.backgroundColor = DesignTokens.GlassInset;
+            track.Border(DesignTokens.Border, 1);
             area.Add(track);
 
             fill = new VisualElement();
             fill.pickingMode = PickingMode.Ignore;
-            fill.style.height = 4;
-            fill.Round(2);
+            fill.style.height = 6;
+            fill.Round(3);
             fill.style.position = Position.Absolute;
             fill.style.left = 0;
             area.Add(fill);
@@ -58,8 +59,8 @@ namespace Evo.UnityLayer
             thumb = new VisualElement();
             thumb.pickingMode = PickingMode.Ignore;
             thumb.style.position = Position.Absolute;
-            thumb.style.top = 8;
-            thumb.Round(9);
+            thumb.style.top = 6;
+            thumb.Round(10);
             area.Add(thumb);
 
             area.RegisterCallback<PointerDownEvent>(OnDown);
@@ -134,14 +135,14 @@ namespace Evo.UnityLayer
             fill.style.backgroundColor = enabled ? DesignTokens.Accent : DesignTokens.TextDisabled;
             float d = (hover || dragging) && enabled ? DesignTokens.SliderThumbHoverSize : DesignTokens.SliderThumbSize;
             thumb.style.width = d; thumb.style.height = d;
-            thumb.style.marginTop = (16f - d) * 0.5f;
+            thumb.style.marginTop = (18f - d) * 0.5f;
             thumb.style.left = Length.Percent(t * 100f);
             thumb.style.translate = new Translate(-d * 0.5f, 0);
             thumb.style.backgroundColor = enabled ? DesignTokens.Text1 : DesignTokens.TextDisabled;
-            thumb.Border(DesignTokens.Bg1, 2);
+            thumb.Border(dragging && enabled ? DesignTokens.Accent : DesignTokens.Bg0, 2);
             thumb.Round(d * 0.5f);
             valueLabel.text = format(value);
-            valueLabel.style.color = enabled ? DesignTokens.Text1 : DesignTokens.TextDisabled;
+            valueLabel.style.color = enabled ? DesignTokens.AccentText : DesignTokens.TextDisabled;
         }
     }
 }

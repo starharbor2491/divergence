@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>Text-field styled button that opens a list card (DESIGN 4.5). The list lives in the overlay layer.</summary>
+    /// <summary>Liquid Glass dropdown control that opens a frosted menu card in the overlay layer.</summary>
     public sealed class EvoDropdown : VisualElement
     {
         public event Action<int> Changed;
@@ -28,10 +28,10 @@ namespace Evo.UnityLayer
             this.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
             this.Round(DesignTokens.Radius);
             this.Pad(0, DesignTokens.Space3);
-            current = Ui.Body("");
+            current = Ui.LabelText("");
             current.style.flexGrow = 1;
             Add(current);
-            chevron = new IconElement("chevron-down", 20f);
+            chevron = new IconElement("chevron-down", 18f);
             Add(chevron);
             Tooltips.Attach(this, tipId);
             RegisterCallback<PointerEnterEvent>(e => { hover = true; Refresh(); });
@@ -66,7 +66,6 @@ namespace Evo.UnityLayer
         static EvoDropdown openInstance;
         public static bool IsOpen { get { return openInstance != null; } }
 
-        /// <summary>Closes the open list, if any. Returns true when one was open (Escape uses this).</summary>
         public static bool CloseOpen()
         {
             if (openInstance == null) return false;
@@ -94,29 +93,30 @@ namespace Evo.UnityLayer
 
             var list = new VisualElement();
             list.style.position = Position.Absolute;
-            list.style.backgroundColor = DesignTokens.Bg2;
-            list.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
-            list.Round(DesignTokens.Radius);
+            LiquidGlass.Attach(list, DesignTokens.RadiusCard, GlassTone.Modal);
+            list.Pad(DesignTokens.Space1);
             Rect rect = new Rect(overlay.WorldToLocal(worldBound.position), worldBound.size);
             list.style.left = rect.x;
-            list.style.top = rect.yMax + 2;
-            list.style.width = rect.width;
+            list.style.top = rect.yMax + 6;
+            list.style.width = Mathf.Max(rect.width, 180f);
             catcher.Add(list);
 
             for (int i = 0; i < items.Count; i++)
             {
                 int index = i;
+                bool isSel = index == selected;
                 VisualElement row = Ui.Row();
-                row.style.height = DesignTokens.ControlHeight;
+                row.style.height = DesignTokens.ControlHeight - 2;
                 row.Pad(0, DesignTokens.Space3);
-                row.style.backgroundColor = Color.clear;
-                var check = new IconElement(index == selected ? "check" : (iconFor != null && iconFor(index) != null ? iconFor(index) : "check"), 20f);
-                check.Tint = index == selected ? DesignTokens.AccentText : Color.clear;
+                row.Round(DesignTokens.Radius - 2);
+                row.style.backgroundColor = isSel ? DesignTokens.AccentSubtle : Color.clear;
+                var check = new IconElement(isSel ? "check" : (iconFor != null && iconFor(index) != null ? iconFor(index) : "check"), 18f);
+                check.Tint = isSel ? DesignTokens.AccentText : Color.clear;
                 check.style.marginRight = DesignTokens.Space2;
                 row.Add(check);
-                row.Add(Ui.Body(items[i]));
-                row.RegisterCallback<PointerEnterEvent>(e => row.style.backgroundColor = DesignTokens.Bg3);
-                row.RegisterCallback<PointerLeaveEvent>(e => row.style.backgroundColor = Color.clear);
+                row.Add(Ui.LabelText(items[i], isSel ? DesignTokens.AccentText : DesignTokens.Text1));
+                row.RegisterCallback<PointerEnterEvent>(e => row.style.backgroundColor = isSel ? DesignTokens.AccentSubtle : DesignTokens.Bg3);
+                row.RegisterCallback<PointerLeaveEvent>(e => row.style.backgroundColor = isSel ? DesignTokens.AccentSubtle : Color.clear);
                 row.RegisterCallback<PointerDownEvent>(e =>
                 {
                     selected = index;

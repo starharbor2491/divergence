@@ -5,14 +5,14 @@ using UnityEngine.UIElements;
 namespace Evo.UnityLayer
 {
     /// <summary>
-    /// The 56 px top bar of the Run screen (DESIGN 6.2): transport and speeds, the readout, then Events, Temperature tint,
-    /// file actions, Help, panel toggle and Menu.
+    /// Floating Liquid Glass top bar: labeled Pause/Resume button, readable 1x–10x speed pills, tabular live telemetry
+    /// (Time, Generation, Cells, Species), Thermal map & Fit View controls, file exports, How it works, Charts toggle, and Menu.
     /// </summary>
     public sealed class TopBar : VisualElement
     {
         readonly AppController app;
         readonly UiRoot ui;
-        readonly EvoButton play, events, tint, panelToggle;
+        readonly EvoButton play, tint, panelToggle;
         readonly EvoButton[] speeds = new EvoButton[4];
         readonly Label timeValue, generationValue, cellsValue, speciesValue, capNote;
         float sinceReadout = 99f;
@@ -26,75 +26,99 @@ namespace Evo.UnityLayer
             style.flexShrink = 0;
             style.flexDirection = FlexDirection.Row;
             style.alignItems = Align.Center;
-            style.backgroundColor = DesignTokens.Bg1;
-            style.borderBottomWidth = DesignTokens.BorderWidth;
-            style.borderBottomColor = DesignTokens.Border;
-            this.Pad(0, DesignTokens.Space2);
+            this.Margin(DesignTokens.Space3, DesignTokens.Space3, 0, DesignTokens.Space3);
+            LiquidGlass.Attach(this, DesignTokens.RadiusPanel, GlassTone.Pill);
+            this.Pad(0, DesignTokens.Space3);
 
-            play = new EvoButton(ButtonKind.Icon, null, "pause", "pause");
+            // Transport: Play/Pause with clear label + 1x/2x/5x/10x segmented pill
+            play = new EvoButton(ButtonKind.Secondary, "Pause", "pause", "pause");
+            play.style.minWidth = 98;
+            play.Round(DesignTokens.RadiusPill);
             play.Clicked += app.TogglePause;
             Add(play);
 
             var group = Ui.Row();
             group.style.marginLeft = DesignTokens.Space2;
             group.style.height = DesignTokens.ControlHeight;
-            group.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
+            group.style.backgroundColor = DesignTokens.GlassInset;
+            group.Border(DesignTokens.Border, DesignTokens.BorderWidth);
             group.Round(DesignTokens.Radius);
-            string[] icons = { "speed-1", "speed-2", "speed-3", "speed-4" };
+            group.Pad(2);
+            string[] speedLabels = { "1x", "2x", "5x", "10x" };
+            string[] speedTips = { "speed-1", "speed-2", "speed-3", "speed-4" };
             for (int i = 0; i < 4; i++)
             {
                 int index = i;
-                speeds[i] = new EvoButton(ButtonKind.Icon, null, icons[i], icons[i]);
-                speeds[i].style.height = DesignTokens.ControlHeight - 2;
-                speeds[i].RoundEnds(i == 0, i == 3);
+                speeds[i] = new EvoButton(ButtonKind.Tab, speedLabels[i], null, speedTips[i]);
+                speeds[i].style.height = DesignTokens.ControlHeight - 4;
+                speeds[i].style.minWidth = 44;
+                speeds[i].Pad(0, 10);
+                speeds[i].Round(DesignTokens.Radius - 3);
                 speeds[i].Clicked += () => app.SetSpeed(index);
                 group.Add(speeds[i]);
             }
             Add(group);
 
+            // Live Telemetry Well
             VisualElement readout = Ui.Row();
-            readout.style.marginLeft = DesignTokens.Space5;
+            readout.style.marginLeft = DesignTokens.Space3;
+            readout.style.height = DesignTokens.ControlHeight;
+            LiquidGlass.StyleWell(readout, DesignTokens.Radius);
+            readout.Pad(0, DesignTokens.Space4);
             readout.pickingMode = PickingMode.Position;
             Tooltips.Attach(readout, "stat-readout");
-            timeValue = Pair(readout, "time", false);
-            generationValue = Pair(readout, "generation", true);
-            cellsValue = Pair(readout, "cells", true);
-            speciesValue = Pair(readout, "species", true);
-            capNote = Ui.Caption(UiText.PopulationCap);
-            capNote.style.marginLeft = DesignTokens.Space5;
+            timeValue = Metric(readout, "Time", false);
+            generationValue = Metric(readout, "Gen", true);
+            cellsValue = Metric(readout, "Cells", true);
+            speciesValue = Metric(readout, "Species", true);
+            capNote = Ui.CaptionBold(UiText.PopulationCap, DesignTokens.StatusWarning);
+            capNote.style.marginLeft = DesignTokens.Space3;
             capNote.Show(false);
             readout.Add(capNote);
             Add(readout);
 
             Add(Ui.Spacer());
 
-            events = new EvoButton(ButtonKind.Icon, null, "event", "events");
-            events.style.width = 56;
-            var chevron = new IconElement("chevron-down", 16f) { Tint = DesignTokens.Text2 };
-            events.Add(chevron);
-            events.Clicked += () => EventsMenu.Open(events, kind => ui.OpenEventDialog(kind));
-            Add(events);
-
-            tint = new EvoButton(ButtonKind.Icon, null, "temperature", "temperature-tint");
+            // View tools
+            tint = new EvoButton(ButtonKind.Secondary, "Thermal", "temperature", "temperature-tint");
             tint.Clicked += app.ToggleTint;
             Add(tint);
 
+            var fit = new EvoButton(ButtonKind.Icon, null, "fit", "fit-view");
+            fit.style.marginLeft = DesignTokens.Space1;
+            fit.Clicked += app.FitView;
+            Add(fit);
+
             Add(Divider());
+
+            // File actions
             AddIcon("save", "save", app.SaveRun);
             var load = AddIcon("load", "load", () => { });
             FileBridge.BindPicker(load, app.LoadRunFromPicker, () => !ui.ModalOpen && !ui.WindowTooSmall);
             AddIcon("csv", "csv", app.ExportCsv);
             AddIcon("screenshot", "screenshot", app.TakeScreenshot);
+
             Add(Divider());
 
-            AddIcon("help", "help", ui.OpenHelp);
-            panelToggle = AddIcon("panel", "panel", app.TogglePanel);
-            AddIcon("home", "home", app.GoToSetup);
+            // Guide, Charts panel toggle, Menu
+            var guide = new EvoButton(ButtonKind.Secondary, "Guide", "help", "help");
+            guide.Clicked += ui.OpenHelp;
+            Add(guide);
+
+            panelToggle = new EvoButton(ButtonKind.Secondary, "Charts", "panel", "panel");
+            panelToggle.style.marginLeft = DesignTokens.Space2;
+            panelToggle.Clicked += app.TogglePanel;
+            Add(panelToggle);
+
+            var home = new EvoButton(ButtonKind.Icon, null, "home", "home");
+            home.style.marginLeft = DesignTokens.Space1;
+            home.Clicked += app.GoToSetup;
+            Add(home);
         }
 
         VisualElement Divider()
         {
-            VisualElement d = Ui.Divider(true, 24);
+            VisualElement d = Ui.Divider(true, 22);
             d.style.marginLeft = d.style.marginRight = DesignTokens.Space2;
             return d;
         }
@@ -107,13 +131,13 @@ namespace Evo.UnityLayer
             return b;
         }
 
-        Label Pair(VisualElement parent, string name, bool gap)
+        static Label Metric(VisualElement parent, string name, bool gap)
         {
-            Label n = Ui.Caption(name);
-            if (gap) n.style.marginLeft = DesignTokens.Space5;
+            Label n = Ui.Caption(name, DesignTokens.Text3);
+            if (gap) n.style.marginLeft = DesignTokens.Space4;
             parent.Add(n);
-            Label v = Ui.Body("");
-            v.style.marginLeft = DesignTokens.Space2;
+            Label v = Ui.Mono("", DesignTokens.Text1, DesignTokens.TypeLabelSize);
+            v.style.marginLeft = 6;
             parent.Add(v);
             return v;
         }
@@ -128,11 +152,14 @@ namespace Evo.UnityLayer
             {
                 shownMode = app.Mode;
                 play.Icon.Icon = running ? "pause" : "play";
+                play.SetText(running ? "Pause" : "Resume");
                 play.SetTip(running ? "pause" : "play");
+                play.Toggled = !running && app.Mode == AppMode.Paused;
                 play.Disabled = app.Mode == AppMode.Extinct;
             }
             for (int i = 0; i < 4; i++) speeds[i].Selected = i == app.SpeedIndex;
             tint.Toggled = app.TintOn;
+            panelToggle.Toggled = app.PanelOpen;
             panelToggle.Icon.On = app.PanelOpen;
 
             sinceReadout += realDt;

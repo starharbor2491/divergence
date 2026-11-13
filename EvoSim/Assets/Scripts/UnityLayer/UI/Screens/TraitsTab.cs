@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>Traits tab (PLAN 12.2): a Trait dropdown, a time or generation switch, the mean and spread chart, and the frequency chart.</summary>
+    /// <summary>Traits tab: Trait selector, Time / Generation pill switch, Trait trade-off summary, mean/spread chart, and frequency bins.</summary>
     public sealed class TraitsTab : PanelTab
     {
         readonly EvoDropdown dropdown;
@@ -28,16 +28,24 @@ namespace Evo.UnityLayer
             dropdown.SetItems(names);
             dropdown.Selected = 0;
             dropdown.style.flexGrow = 1;
-            dropdown.style.marginLeft = DesignTokens.Space3;
+            dropdown.style.marginLeft = DesignTokens.Space2;
             dropdown.Changed += i => { trait = i; ApplyTrait(); };
             controls.Add(dropdown);
 
             VisualElement axis = Ui.Row();
-            axis.style.marginLeft = DesignTokens.Space3;
-            timeButton = new EvoButton(ButtonKind.Secondary, "time", null, "axis-switch");
-            generationButton = new EvoButton(ButtonKind.Secondary, "generation", null, "axis-switch");
-            timeButton.RoundEnds(true, false);
-            generationButton.RoundEnds(false, true);
+            axis.style.marginLeft = DesignTokens.Space2;
+            axis.style.backgroundColor = DesignTokens.GlassInset;
+            axis.Border(DesignTokens.Border, DesignTokens.BorderWidth);
+            axis.Round(DesignTokens.Radius);
+            axis.Pad(2);
+            timeButton = new EvoButton(ButtonKind.Tab, "Time", null, "axis-switch");
+            generationButton = new EvoButton(ButtonKind.Tab, "Gen", null, "axis-switch");
+            timeButton.style.height = DesignTokens.ControlHeight - 4;
+            generationButton.style.height = DesignTokens.ControlHeight - 4;
+            timeButton.Pad(0, 10);
+            generationButton.Pad(0, 10);
+            timeButton.Round(DesignTokens.Radius - 3);
+            generationButton.Round(DesignTokens.Radius - 3);
             timeButton.Selected = true;
             timeButton.Clicked += () => SetAxis(false);
             generationButton.Clicked += () => SetAxis(true);
@@ -45,17 +53,23 @@ namespace Evo.UnityLayer
             axis.Add(generationButton);
             controls.Add(axis);
             Add(controls);
-            Label definition = Ui.Caption("");
-            definition.style.marginTop = DesignTokens.Space2;
-            Add(definition);
+
+            VisualElement defCard = new VisualElement();
+            LiquidGlass.StyleWell(defCard, DesignTokens.Radius);
+            defCard.Pad(DesignTokens.Space2, DesignTokens.Space3);
+            defCard.style.marginTop = DesignTokens.Space2;
+            Label definition = Ui.Caption("", DesignTokens.Text2);
+            defCard.Add(definition);
+            Add(defCard);
+
             dropdown.Changed += i => definition.text = UiText.TraitTip(i).Body;
             definition.text = UiText.TraitTip(trait).Body;
             Tooltips.Attach(tl, () => UiText.TraitTip(trait));
 
-            FixedHeight(lineChart, 210);
-            Add(Section("Mean and spread", "", "chart-trait-mean", UiText.Body("chart-trait-mean"), lineChart));
+            FixedHeight(lineChart, 205);
+            Add(Section("Mean and spread", "dashed = Founder start", "chart-trait-mean", UiText.Body("chart-trait-mean"), lineChart));
 
-            FixedHeight(freqChart, 210);
+            FixedHeight(freqChart, 195);
             VisualElement freq = Ui.Column();
             freq.Add(freqChart);
             VisualElement legendBox = Ui.Column();
@@ -66,7 +80,7 @@ namespace Evo.UnityLayer
                 legendBox.Add(legend[b]);
             }
             freq.Add(legendBox);
-            Add(Section("Frequency", "share of Cells", "chart-trait-frequency", UiText.Body("chart-trait-frequency"), freq));
+            Add(Section("Trait frequency", "share of living Cells", "chart-trait-frequency", UiText.Body("chart-trait-frequency"), freq));
         }
 
         static string Capitalise(string s) { return s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s.Substring(1); }

@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>A reversible safeguard before discarding or replacing the current Run.</summary>
+    /// <summary>Liquid Glass confirmation safeguard before discarding or replacing the current Run.</summary>
     public sealed class RunActionDialog : VisualElement
     {
         Action cancel;
@@ -26,21 +26,23 @@ namespace Evo.UnityLayer
             IsOpen = true;
             var card = new VisualElement();
             card.style.width = DesignTokens.DialogWidth;
-            card.style.backgroundColor = DesignTokens.Bg1;
-            card.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
-            card.Round(DesignTokens.Radius);
+            LiquidGlass.Attach(card, DesignTokens.RadiusPanel, GlassTone.Modal);
             card.Pad(DesignTokens.Space5);
             Add(card);
+
             VisualElement header = Ui.Row();
-            header.Add(Ui.Title(title));
+            header.Add(Ui.Heading(title, DesignTokens.Text1));
             header.Add(Ui.Spacer());
             var close = new EvoButton(ButtonKind.Icon, null, "close", "confirm-cancel");
             close.Clicked += () => Close(true);
             header.Add(close);
             card.Add(header);
-            Label note = Ui.Body("The current Run will be discarded. Save first if you want to keep it.");
-            note.style.marginTop = note.style.marginBottom = DesignTokens.Space4;
+
+            Label note = Ui.Body("The current Run will be discarded. Save first if you want to keep it.", DesignTokens.Text2);
+            note.style.marginTop = DesignTokens.Space3;
+            note.style.marginBottom = DesignTokens.Space4;
             card.Add(note);
+
             VisualElement buttons = Ui.Row();
             buttons.style.justifyContent = Justify.FlexEnd;
             var back = new EvoButton(ButtonKind.Secondary, "Cancel", null, "confirm-cancel");

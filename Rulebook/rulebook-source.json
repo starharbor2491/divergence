@@ -87,7 +87,7 @@
        "style": "h2"
       },
       {
-       "text": "Drag to move the view. Scroll to zoom. Click a Cell to inspect it. Space pauses. Keys 1 to 4 change speed. F fits the World. T shows Temperature. Tab hides the side panel. Escape cancels or closes.",
+       "text": "Drag to move the view. Scroll to zoom. Click a Cell to inspect it and see its sense range. Space pauses. Keys 1 to 4 change speed. F fits the World. T boosts the thermal map. Tab hides the charts panel. Escape cancels or closes.",
        "style": "body"
       },
       {
@@ -103,7 +103,7 @@
        "style": "h2"
       },
       {
-       "text": "Temperature varies smoothly from cold to hot. Food appears as pellets, more in some places than others. Toxin is a set of particles that drift, attract each other slightly and fade.",
+       "text": "Temperature varies smoothly from cold blue currents to hot coral zones. Food appears as glowing green pellets, more in some places than others. Toxin is a set of pink particles that drift, attract each other slightly and fade.",
        "style": "body"
       },
       {
@@ -144,7 +144,7 @@
        "style": "h2"
       },
       {
-       "text": "Cells begin white. A Cell's colour comes from its Genome, so similar Cells have similar colours. A Species is a group of Cells whose Genomes are close together. A new Species appears when a group drifts far enough from the rest.",
+       "text": "Cells begin white. A Cell's colour comes from its Genome, so similar Cells have similar colours. Grazers show a green inner core while high-diet hunters grow warm amber cores and front mandibles. A Species is a group of Cells whose Genomes are close together; a new Species appears when a group drifts far enough apart.",
        "style": "body"
       },
       {
@@ -152,7 +152,7 @@
        "style": "h2"
       },
       {
-       "text": "Traits shows one Trait over time or mean Generation, which can decrease as the living population changes. Species shows the twenty Species with highest historical peaks; the rest form Other. Tree shows which Species came from which. Stats shows deaths in the latest ten minutes; legend totals cover the whole Run. Sexual share counts living Cells with sexual tendency at least 0.50, not births.",
+       "text": "Traits shows one Trait over time or mean Generation, with a dashed line marking the Founders' starting average. Species shows the twenty Species with highest historical peaks; the rest form Other. Tree shows which Species split from which. Stats shows deaths in the latest ten minutes; legend totals cover the whole Run. Sexual share counts living Cells with sexual tendency at least 0.50, not births.",
        "style": "body"
       },
       {
@@ -160,7 +160,7 @@
        "style": "h2"
       },
       {
-       "text": "Events change the World while a Run is going. Choose an Event, set its size, then click the World to place it. Whole World applies without placement; for toxin spills, radius still sets quantity.",
+       "text": "Events change the World while a Run is going. Pick an Event from the bottom dock, set its size, then click the World to place it. Whole World applies without placement; for toxin spills, radius still sets quantity.",
        "style": "body"
       },
       {

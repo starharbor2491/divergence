@@ -1,9 +1,10 @@
+using Evo.Core;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>The Help screen (DESIGN 6.5): a section list on the left and the section text on the right, over the scrim.</summary>
+    /// <summary>Liquid Glass Help & Guide overlay with left navigation rail, readable prose, and Trait/Event reference cards.</summary>
     public sealed class HelpScreen : VisualElement
     {
         public const int MaxLineLength = 70;
@@ -12,6 +13,7 @@ namespace Evo.UnityLayer
         readonly VisualElement[] navItems = new VisualElement[UiText.HelpTitles.Length];
         readonly ScrollView scroll = UiScroll.Create();
         readonly Label title, body;
+        readonly VisualElement extras = Ui.Column();
         int selected;
         public bool IsOpen { get; private set; }
 
@@ -24,17 +26,18 @@ namespace Evo.UnityLayer
             this.Show(false);
 
             var card = new VisualElement();
-            card.style.width = Length.Percent(80);
+            card.style.width = Length.Percent(82);
             card.style.maxWidth = DesignTokens.HelpWidth;
-            card.style.height = Length.Percent(80);
-            card.style.backgroundColor = DesignTokens.Bg1;
-            card.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
-            card.Round(DesignTokens.Radius);
+            card.style.height = Length.Percent(82);
+            LiquidGlass.Attach(card, DesignTokens.RadiusPanel, GlassTone.Modal);
             card.Pad(DesignTokens.Space5);
             Add(card);
 
             VisualElement head = Ui.Row();
-            head.Add(Ui.Heading("How it works", DesignTokens.Text1));
+            var icon = new IconElement("glyph-branch", 26f) { Tint = DesignTokens.AccentText };
+            icon.style.marginRight = DesignTokens.Space3;
+            head.Add(icon);
+            head.Add(Ui.Heading("How Divergence works", DesignTokens.Text1));
             head.Add(Ui.Spacer());
             var close = new EvoButton(ButtonKind.Icon, null, "close", "close");
             close.Clicked += Close;
@@ -50,6 +53,8 @@ namespace Evo.UnityLayer
             VisualElement nav = Ui.Column();
             nav.style.width = DesignTokens.HelpNavWidth;
             nav.style.flexShrink = 0;
+            LiquidGlass.StyleWell(nav, DesignTokens.RadiusCard);
+            nav.Pad(DesignTokens.Space2);
             for (int i = 0; i < navRows.Length; i++)
             {
                 int index = i;
@@ -57,11 +62,17 @@ namespace Evo.UnityLayer
                 row.style.height = DesignTokens.ControlHeight;
                 row.style.justifyContent = Justify.Center;
                 row.Pad(0, DesignTokens.Space3);
-                row.Round(DesignTokens.Radius);
+                row.Round(DesignTokens.Radius - 2);
                 navRows[i] = Ui.LabelText(UiText.HelpTitles[i]);
                 row.Add(navRows[i]);
-                row.RegisterCallback<PointerEnterEvent>(e => row.style.backgroundColor = DesignTokens.Bg3);
-                row.RegisterCallback<PointerLeaveEvent>(e => row.style.backgroundColor = index == selected ? DesignTokens.Bg3 : Color.clear);
+                row.RegisterCallback<PointerEnterEvent>(e =>
+                {
+                    if (index != selected) row.style.backgroundColor = DesignTokens.Bg3;
+                });
+                row.RegisterCallback<PointerLeaveEvent>(e =>
+                {
+                    if (index != selected) row.style.backgroundColor = Color.clear;
+                });
                 row.RegisterCallback<PointerDownEvent>(e => Select(index));
                 navItems[i] = row;
                 nav.Add(row);
@@ -70,23 +81,76 @@ namespace Evo.UnityLayer
 
             scroll.style.marginLeft = DesignTokens.Space5;
             columns.Add(scroll);
-            title = Ui.Title("");
-            body = Ui.Body("");
-            body.style.whiteSpace = WhiteSpace.NoWrap;
+            title = Ui.Heading("", DesignTokens.Text1);
+            body = Ui.Body("", DesignTokens.Text2);
+            body.style.maxWidth = 620;
             body.style.marginTop = DesignTokens.Space3;
             body.style.marginRight = DesignTokens.Space4;
+            extras.style.marginTop = DesignTokens.Space4;
+            extras.style.marginRight = DesignTokens.Space4;
+            extras.style.maxWidth = 620;
             scroll.Add(title);
             scroll.Add(body);
+            scroll.Add(extras);
             Select(0);
         }
 
         void Select(int index)
         {
             selected = index;
-            for (int i = 0; i < navItems.Length; i++) navItems[i].style.backgroundColor = i == index ? DesignTokens.Bg3 : Color.clear;
+            for (int i = 0; i < navItems.Length; i++)
+            {
+                bool active = i == index;
+                navItems[i].style.backgroundColor = active ? DesignTokens.AccentSubtle : Color.clear;
+                navItems[i].Border(active ? DesignTokens.WithAlpha(DesignTokens.Accent, 0.45f) : Color.clear, active ? 1 : 0);
+                navRows[i].style.color = active ? DesignTokens.AccentText : DesignTokens.Text2;
+            }
             title.text = UiText.HelpTitles[index];
-            body.text = UiText.Wrap(UiText.HelpBodies[index], MaxLineLength);
+            body.text = UiText.HelpBodies[index];
+            BuildExtras(index);
             scroll.scrollOffset = Vector2.zero;
+        }
+
+        void BuildExtras(int index)
+        {
+            extras.Clear();
+            string section = UiText.HelpTitles[index];
+            if (section == "Traits")
+            {
+                for (int t = 0; t < UiText.TraitIds.Length; t++)
+                {
+                    TipContent tip = UiText.TraitTip(t);
+                    var item = new VisualElement();
+                    LiquidGlass.StyleWell(item, DesignTokens.Radius);
+                    item.Pad(DesignTokens.Space3);
+                    if (t > 0) item.style.marginTop = DesignTokens.Space2;
+                    item.Add(Ui.Subhead(tip.Name, DesignTokens.AccentText));
+                    Label desc = Ui.Caption(tip.Body, DesignTokens.Text2);
+                    desc.style.marginTop = 3;
+                    item.Add(desc);
+                    extras.Add(item);
+                }
+            }
+            else if (section == "Events")
+            {
+                for (int k = 0; k < EventInfo.Ids.Length; k++)
+                {
+                    Color ec = EventsMenu.AccentFor((EventKind)k);
+                    var item = Ui.Row();
+                    LiquidGlass.StyleWell(item, DesignTokens.Radius);
+                    item.Pad(DesignTokens.Space3);
+                    if (k > 0) item.style.marginTop = DesignTokens.Space2;
+                    var ic = new IconElement(EventInfo.Ids[k], 20f) { Tint = ec };
+                    ic.style.marginRight = DesignTokens.Space3;
+                    item.Add(ic);
+                    VisualElement col = Ui.Column();
+                    col.style.flexShrink = 1;
+                    col.Add(Ui.Subhead(EventInfo.Names[k], DesignTokens.Text1));
+                    col.Add(Ui.Caption(UiText.Body("event-" + EventInfo.Ids[k]), DesignTokens.Text2));
+                    item.Add(col);
+                    extras.Add(item);
+                }
+            }
         }
 
         public void Open()

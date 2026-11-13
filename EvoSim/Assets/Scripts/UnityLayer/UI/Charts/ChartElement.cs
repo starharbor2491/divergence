@@ -7,9 +7,8 @@ using UnityEngine.UIElements;
 namespace Evo.UnityLayer
 {
     /// <summary>
-    /// Shared chart anatomy (DESIGN 5.1): margins, horizontal gridlines, axis labels, Event markers, crosshair and hover read-out.
-    /// Subclasses set the axis ranges and tick lists in ComputeAxes and draw their marks in DrawData.
-    /// Charts redraw when Redraw is called (once per sample or per real second), never every frame.
+    /// Shared Liquid Glass chart anatomy: recessed rounded surface, gridlines, tabular mono axis labels, Event chips,
+    /// crosshair and hover read-out. Redraws once per sample or real second, never every frame.
     /// </summary>
     public abstract class ChartElement : VisualElement
     {
@@ -23,7 +22,7 @@ namespace Evo.UnityLayer
         protected Func<float, string> yFormat = v => v.ToString("0");
         protected int hoverIndex = -1;
         protected bool showEventMarkers = true;
-        protected Func<double, float> eventTimeToX;   // maps an Event's simulated time to a data x value; null hides markers
+        protected Func<double, float> eventTimeToX;
 
         readonly List<Label> labels = new List<Label>();
         int labelsUsed;
@@ -40,6 +39,8 @@ namespace Evo.UnityLayer
         {
             style.flexShrink = 0;
             style.backgroundColor = DesignTokens.ChartSurface;
+            this.Round(DesignTokens.RadiusCard);
+            this.Border(DesignTokens.Border, DesignTokens.BorderWidth);
             generateVisualContent += OnGenerate;
             card.Show(false);
             RegisterCallback<AttachToPanelEvent>(e => charts.Add(this));
@@ -106,7 +107,7 @@ namespace Evo.UnityLayer
         {
             if (labelsUsed == labels.Count)
             {
-                Label l = Ui.Caption("", DesignTokens.Text3);
+                Label l = Ui.MonoCaption("", DesignTokens.Text3);
                 l.style.position = Position.Absolute;
                 l.style.width = 60;
                 labels.Add(l);
@@ -115,6 +116,7 @@ namespace Evo.UnityLayer
             Label label = labels[labelsUsed++];
             label.style.width = width;
             label.style.whiteSpace = WhiteSpace.NoWrap;
+            label.style.color = DesignTokens.Text3;
             label.Show(true);
             return label;
         }
@@ -142,7 +144,7 @@ namespace Evo.UnityLayer
             for (int i = labelsUsed; i < labels.Count; i++) labels[i].Show(false);
         }
 
-        // ------------------------------------------------------------ Event markers (DESIGN 4.17)
+        // ------------------------------------------------------------ Event markers
         public void SetEvents(IList<EventRecord> events)
         {
             markers.Clear();
@@ -180,7 +182,7 @@ namespace Evo.UnityLayer
                     }
                     while (i < order.Count && X(eventTimeToX(markers[order[i]].Time)) - lastX < DesignTokens.EventChipSize + DesignTokens.EventChipGap);
                     VisualElement chip = GetChip(used++);
-                    chip.style.left = Mathf.Clamp((firstX + lastX) * 0.5f - DesignTokens.EventChipSize * 0.5f, 0, layout.width - DesignTokens.EventChipSize);
+                    chip.style.left = Mathf.Clamp((firstX + lastX) * 0.5f - DesignTokens.EventChipSize * 0.5f, 2, layout.width - DesignTokens.EventChipSize - 2);
                     chip.style.top = DesignTokens.Space1;
                     chip.userData = group;
                     ((Label)chip[0]).text = group.Count == 1 ? EventInfo.Letters[(int)group[0].Kind] : (group.Count <= 9 ? group.Count.ToString() : "+");
@@ -198,11 +200,11 @@ namespace Evo.UnityLayer
                 chip.style.position = Position.Absolute;
                 chip.Size(DesignTokens.EventChipSize, DesignTokens.EventChipSize);
                 chip.Round(DesignTokens.EventChipSize * 0.5f);
-                chip.style.backgroundColor = DesignTokens.Bg2;
+                chip.style.backgroundColor = DesignTokens.Bg3;
                 chip.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
                 chip.style.alignItems = Align.Center;
                 chip.style.justifyContent = Justify.Center;
-                Label letter = Ui.CaptionBold("", DesignTokens.Text1);
+                Label letter = Ui.CaptionBold("", DesignTokens.AccentText);
                 letter.style.unityTextAlign = TextAnchor.MiddleCenter;
                 chip.Add(letter);
                 VisualElement captured = chip;
@@ -288,7 +290,7 @@ namespace Evo.UnityLayer
         {
             Painter2D p = ctx.painter2D;
             if (plot.width < 10f) return;
-            p.lineCap = LineCap.Butt;
+            p.lineCap = LineCap.Round;
             p.lineJoin = LineJoin.Round;
             foreach (float t in yTicks) Segment(p, new Vector2(plot.xMin, Y(t)), new Vector2(plot.xMax, Y(t)), DesignTokens.ChartGrid, 1f);
             Segment(p, new Vector2(plot.xMin, plot.yMax), new Vector2(plot.xMax, plot.yMax), DesignTokens.ChartAxis, 1f);
@@ -296,28 +298,29 @@ namespace Evo.UnityLayer
 
             DrawData(p);
 
-            // Event markers: 1 px dashed line, 4 px dash and 4 px gap
             for (int i = 0; i < markerX.Count; i++)
             {
+                Color mc = DesignTokens.WithAlpha(DesignTokens.AccentText, 0.42f);
                 for (float y = plot.yMin; y < plot.yMax; y += 8f)
-                    Segment(p, new Vector2(markerX[i], y), new Vector2(markerX[i], Mathf.Min(y + 4f, plot.yMax)), DesignTokens.Text3, 1f);
+                    Segment(p, new Vector2(markerX[i], y), new Vector2(markerX[i], Mathf.Min(y + 4f, plot.yMax)), mc, 1.1f);
             }
 
             if (IsValidIndex(hoverIndex) && UseCrosshair)
             {
                 float hx = IndexX(hoverIndex);
-                Segment(p, new Vector2(hx, plot.yMin), new Vector2(hx, plot.yMax), DesignTokens.Text3, 1f);
+                Segment(p, new Vector2(hx, plot.yMin), new Vector2(hx, plot.yMax), DesignTokens.WithAlpha(DesignTokens.Text1, 0.45f), 1.1f);
                 DrawHover(p, hoverIndex);
             }
         }
 
-        /// <summary>An 8 px marker with a 2 px chart-surface ring (DESIGN 5.1).</summary>
         protected static void HoverDot(Painter2D p, Vector2 c, Color color)
         {
-            p.fillColor = DesignTokens.ChartSurface;
-            p.BeginPath(); p.Arc(c, 6f, Angle.Degrees(0), Angle.Degrees(360)); p.Fill();
+            p.fillColor = DesignTokens.WithAlpha(color, 0.28f);
+            p.BeginPath(); p.Arc(c, 8f, Angle.Degrees(0), Angle.Degrees(360)); p.Fill();
+            p.fillColor = DesignTokens.Bg0;
+            p.BeginPath(); p.Arc(c, 5.5f, Angle.Degrees(0), Angle.Degrees(360)); p.Fill();
             p.fillColor = color;
-            p.BeginPath(); p.Arc(c, 4f, Angle.Degrees(0), Angle.Degrees(360)); p.Fill();
+            p.BeginPath(); p.Arc(c, 3.8f, Angle.Degrees(0), Angle.Degrees(360)); p.Fill();
         }
 
         // ------------------------------------------------------------ helpers
@@ -333,7 +336,6 @@ namespace Evo.UnityLayer
             for (float v = start; v <= max + step * 1e-4f && output.Count < 12; v += step) output.Add(Mathf.Abs(v) < step * 1e-4f ? 0f : v);
         }
 
-        /// <summary>Nearest value in chronological samples; population mean Generation can decrease.</summary>
         protected static int Nearest(IList<float> xs, int count, float x)
         {
             if (count == 0) return -1;

@@ -80,7 +80,6 @@ namespace Evo.UnityLayer
                 xMin = 0f;
                 xMax = Mathf.Max(60f, axis.Max);
                 NiceTicks(xMin, xMax, 5, xTicks);
-                // nice ticks in whole minutes or seconds for readability
                 xFormat = v => TimeTick(v);
             }
         }
@@ -106,7 +105,7 @@ namespace Evo.UnityLayer
         }
     }
 
-    /// <summary>Mean line with a one standard deviation band (DESIGN 5.2).</summary>
+    /// <summary>Mean line with a one standard deviation band plus a subtle Founder baseline reference.</summary>
     public sealed class TraitLineChart : SimChart
     {
         int trait;
@@ -131,22 +130,37 @@ namespace Evo.UnityLayer
             if (lo == float.MaxValue) { lo = Traits.Min[trait]; hi = Traits.Max[trait]; }
             lo = Mathf.Max(lo, Traits.Min[trait]);
             hi = Mathf.Min(hi, Traits.Max[trait]);
-            float pad = Mathf.Max(0.02f * Traits.Range(trait), (hi - lo) * 0.1f);
+            float pad = Mathf.Max(0.02f * Traits.Range(trait), (hi - lo) * 0.12f);
             yMin = Mathf.Max(Traits.Min[trait], lo - pad);
             yMax = Mathf.Min(Traits.Max[trait], hi + pad);
-            if (yMax - yMin < 0.05f * Traits.Range(trait)) { float mid = (yMax + yMin) * 0.5f; yMin = mid - 0.025f * Traits.Range(trait); yMax = mid + 0.025f * Traits.Range(trait); }
+            if (yMax - yMin < 0.05f * Traits.Range(trait))
+            {
+                float mid = (yMax + yMin) * 0.5f;
+                yMin = mid - 0.025f * Traits.Range(trait);
+                yMax = mid + 0.025f * Traits.Range(trait);
+            }
             NiceTicks(yMin, yMax, 4, yTicks);
             yFormat = v => v.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
         }
 
         protected override void DrawData(Painter2D p)
         {
+            // Founder average reference line so students immediately see divergence from Founders
+            float founder = Traits.FounderMean[trait];
+            if (founder >= yMin && founder <= yMax)
+            {
+                float fy = Y(founder);
+                Color refCol = DesignTokens.WithAlpha(DesignTokens.Text3, 0.32f);
+                for (float x = plot.xMin; x < plot.xMax; x += 10f)
+                    Segment(p, new Vector2(x, fy), new Vector2(Mathf.Min(x + 5f, plot.xMax), fy), refCol, 1f);
+            }
+
             var samples = sim.Stats.Samples;
             int n = axis.Count;
             while (n > 0 && samples[n - 1].Count == 0) n--;
             if (n < 2) return;
             int stride = Stride(n, 700);
-            p.fillColor = DesignTokens.WithAlpha(DesignTokens.ChartSeries1, 0.2f);
+            p.fillColor = DesignTokens.WithAlpha(DesignTokens.ChartSeries1, 0.22f);
             p.BeginPath();
             bool first = true;
             for (int i = 0; i < n; i += stride)
@@ -161,11 +175,22 @@ namespace Evo.UnityLayer
             p.ClosePath();
             p.Fill();
 
-            p.lineWidth = 2f;
-            p.strokeColor = DesignTokens.ChartSeries1;
+            // Soft glow stroke + crisp 2.2px curve
             p.lineJoin = LineJoin.Round;
+            p.lineCap = LineCap.Round;
+            p.lineWidth = 4.5f;
+            p.strokeColor = DesignTokens.WithAlpha(DesignTokens.ChartSeries1, 0.20f);
+            StrokeMeanPath(p, samples, n, stride);
+
+            p.lineWidth = 2.2f;
+            p.strokeColor = DesignTokens.ChartSeries1;
+            StrokeMeanPath(p, samples, n, stride);
+        }
+
+        void StrokeMeanPath(Painter2D p, List<Sample> samples, int n, int stride)
+        {
             p.BeginPath();
-            first = true;
+            bool first = true;
             for (int i = 0; i < n; i += stride)
             {
                 Vector2 v = new Vector2(X(axis.Xs[i]), Y(samples[i].TraitMean[trait]));
@@ -192,11 +217,12 @@ namespace Evo.UnityLayer
             }
             rows.Add(new ReadoutRow { Swatch = DesignTokens.ChartSeries1, Name = "mean", Value = Ui.F(s.TraitMean[trait], 2) });
             rows.Add(new ReadoutRow { Name = "standard deviation", Value = Ui.F(s.TraitSd[trait], 2) });
+            rows.Add(new ReadoutRow { Name = "founder start", Value = Ui.F(Traits.FounderMean[trait], 2) });
             rows.Add(new ReadoutRow { Name = "cells", Value = Ui.Count(s.Count) });
         }
     }
 
-    /// <summary>Common drawing for stacked areas with a 2 px chart-surface gap between fills.</summary>
+    /// <summary>Common drawing for stacked areas with a crisp dark gap between fills.</summary>
     public abstract class StackedChart : SimChart
     {
         protected float[][] cumulative = new float[0][];
@@ -242,9 +268,8 @@ namespace Evo.UnityLayer
                 p.ClosePath();
                 p.Fill();
             }
-            // 2 px gaps: stroke each layer's top edge in the surface colour
-            p.lineWidth = 2f;
-            p.strokeColor = DesignTokens.ChartSurface;
+            p.lineWidth = 1.6f;
+            p.strokeColor = DesignTokens.Bg0;
             for (int l = 0; l < layerCount; l++)
             {
                 float[] top = cumulative[l];
@@ -272,7 +297,7 @@ namespace Evo.UnityLayer
         }
     }
 
-    /// <summary>Share of living Cells in each of the six bins of one Trait (DESIGN 5.3).</summary>
+    /// <summary>Share of living Cells in each of the six bins of one Trait.</summary>
     public sealed class TraitFrequencyChart : StackedChart
     {
         protected override bool OmitEmptyPopulation { get { return true; } }
@@ -290,7 +315,6 @@ namespace Evo.UnityLayer
             float hi = bin == TraitBins.Count - 1 ? Traits.Max[trait] : TraitBins.EdgeLow(trait, bin + 1, p);
             lo = Mathf.Clamp(lo, Traits.Min[trait], Traits.Max[trait]);
             hi = Mathf.Clamp(hi, Traits.Min[trait], Traits.Max[trait]);
-            // A window edge can fall outside the allowed range, which leaves the bin empty for good.
             if (hi - lo < 0.005f) return "out of range";
             return Ui.F(lo, 2) + " to " + Ui.F(hi, 2);
         }
@@ -338,7 +362,7 @@ namespace Evo.UnityLayer
         }
     }
 
-    /// <summary>Population per Species (DESIGN 5.4): the 20 largest by peak, the rest as Other.</summary>
+    /// <summary>Population per Species: the 20 largest by peak, the rest as Other.</summary>
     public sealed class SpeciesChart : StackedChart
     {
         public const int MaxLayers = 20;
@@ -367,7 +391,6 @@ namespace Evo.UnityLayer
 
         void SelectSpecies()
         {
-            // pick the largest 20 by peak population
             order.Clear();
             order.AddRange(sim.Species.Records);
             if (order.Count > MaxLayers)
@@ -432,7 +455,7 @@ namespace Evo.UnityLayer
         }
     }
 
-    /// <summary>Deaths by cause in 10 s bins, stacked (DESIGN 5.6). Shows the latest 60 bins.</summary>
+    /// <summary>Deaths by cause in 10 s bins, stacked. Shows the latest 60 bins.</summary>
     public sealed class DeathsChart : SimChart
     {
         const int Window = 60;
@@ -476,7 +499,7 @@ namespace Evo.UnityLayer
 
         protected override void DrawData(Painter2D p)
         {
-            float barW = plot.width / Mathf.Max(1, bins) * 0.8f;
+            float barW = plot.width / Mathf.Max(1, bins) * 0.76f;
             for (int b = 0; b < bins; b++)
             {
                 float cx = X(binX[b] + sim.P.DeathBinSeconds * 0.5f);
@@ -495,8 +518,8 @@ namespace Evo.UnityLayer
                     p.LineTo(new Vector2(cx - barW * 0.5f, y1));
                     p.ClosePath();
                     p.Fill();
-                    p.lineWidth = 2f;
-                    p.strokeColor = DesignTokens.ChartSurface;
+                    p.lineWidth = 1.5f;
+                    p.strokeColor = DesignTokens.Bg0;
                     p.BeginPath();
                     p.MoveTo(new Vector2(cx - barW * 0.5f, y1));
                     p.LineTo(new Vector2(cx + barW * 0.5f, y1));
@@ -524,7 +547,7 @@ namespace Evo.UnityLayer
         }
     }
 
-    /// <summary>Family tree of Species (DESIGN 5.5). Clicking a line raises SpeciesClicked.</summary>
+    /// <summary>Evolutionary cladogram of Species with smooth curved divergence forks. Clicking a line highlights that Species.</summary>
     public sealed class TreeChart : SimChart
     {
         public event Action<int> SpeciesClicked;
@@ -592,11 +615,12 @@ namespace Evo.UnityLayer
         {
             for (int i = 0; i < rows.Count; i++)
             {
-                Label l = GetLabel(90f);
+                Label l = GetLabel(96f);
+                Ui.Type(l, FontRole.Medium, DesignTokens.TypeCaptionSize);
                 l.text = rows[i].Name;
                 l.style.unityTextAlign = TextAnchor.MiddleLeft;
-                l.style.color = DesignTokens.Text2;
-                float x = Mathf.Min(X(EndTime(rows[i])) + 8f, plot.xMax - 90f);
+                l.style.color = rows[i].Extinct ? DesignTokens.Text3 : DesignTokens.Text2;
+                float x = Mathf.Min(X(EndTime(rows[i])) + 8f, plot.xMax - 96f);
                 l.style.left = x;
                 l.style.top = RowY(i) - DesignTokens.TypeCaptionLine * 0.5f - (x < X(EndTime(rows[i])) ? DesignTokens.TypeCaptionLine * 0.7f : 0f);
             }
@@ -604,25 +628,55 @@ namespace Evo.UnityLayer
 
         protected override void DrawData(Painter2D p)
         {
-            p.lineCap = LineCap.Butt;
-            // connectors first so lines draw over them
+            p.lineCap = LineCap.Round;
+            // Smooth evolutionary divergence forks first
             for (int i = 0; i < rows.Count; i++)
             {
                 int parentRow;
                 if (rows[i].ParentId != 0 && rowOf.TryGetValue(rows[i].ParentId, out parentRow))
-                    Segment(p, new Vector2(X((float)rows[i].BirthTime), RowY(parentRow)), new Vector2(X((float)rows[i].BirthTime), RowY(i)), DesignTokens.Text3, 1.5f);
+                {
+                    float bx = X((float)rows[i].BirthTime);
+                    float py = RowY(parentRow), cy = RowY(i);
+                    float curve = Mathf.Min(10f, Mathf.Max(2f, X(EndTime(rows[i])) - bx));
+                    p.lineWidth = 1.6f;
+                    p.strokeColor = DesignTokens.WithAlpha(DesignTokens.Text2, 0.55f);
+                    p.BeginPath();
+                    p.MoveTo(new Vector2(bx, py));
+                    p.BezierCurveTo(new Vector2(bx, Mathf.Lerp(py, cy, 0.65f)), new Vector2(bx, cy), new Vector2(bx + curve * 0.25f, cy));
+                    p.Stroke();
+                }
             }
             for (int i = 0; i < rows.Count; i++)
             {
                 SpeciesRecord s = rows[i];
-                int pop = s.Extinct ? s.LastPopulation : s.CurrentPopulation;
-                float width = Mathf.Lerp(1f, 6f, Mathf.Clamp01(pop / (float)maxPeak));
-                Color c = new Color(s.ColorR, s.ColorG, s.ColorB, 1f);
-                float y = RowY(i);
-                Segment(p, new Vector2(X((float)s.BirthTime), y), new Vector2(X(EndTime(s)), y), c, width);
-                if (s.Extinct) Segment(p, new Vector2(X(EndTime(s)), y - 4f), new Vector2(X(EndTime(s)), y + 4f), DesignTokens.Text3, 1f);
                 if (i == hoverIndex)
-                    Segment(p, new Vector2(plot.xMin, y + rowHeight * 0.5f), new Vector2(plot.xMax, y + rowHeight * 0.5f), DesignTokens.ChartGrid, 1f);
+                {
+                    p.fillColor = DesignTokens.WithAlpha(DesignTokens.Bg3, 0.45f);
+                    p.BeginPath();
+                    float ry = RowY(i) - rowHeight * 0.46f;
+                    p.MoveTo(new Vector2(plot.xMin, ry));
+                    p.LineTo(new Vector2(plot.xMax, ry));
+                    p.LineTo(new Vector2(plot.xMax, ry + rowHeight * 0.92f));
+                    p.LineTo(new Vector2(plot.xMin, ry + rowHeight * 0.92f));
+                    p.ClosePath();
+                    p.Fill();
+                }
+
+                int pop = s.Extinct ? s.LastPopulation : s.CurrentPopulation;
+                float width = Mathf.Lerp(1.6f, 6.4f, Mathf.Clamp01(pop / (float)maxPeak));
+                Color c = new Color(s.ColorR, s.ColorG, s.ColorB, s.Extinct ? 0.62f : 1f);
+                float y = RowY(i);
+                float x0 = X((float)s.BirthTime), x1 = X(EndTime(s));
+                Segment(p, new Vector2(x0, y), new Vector2(Mathf.Max(x0 + 1f, x1), y), c, width);
+
+                // Speciation origin node
+                p.fillColor = c;
+                p.BeginPath(); p.Arc(new Vector2(x0, y), Mathf.Max(2.4f, width * 0.55f), Angle.Degrees(0), Angle.Degrees(360)); p.Fill();
+
+                if (s.Extinct)
+                {
+                    Segment(p, new Vector2(x1, y - 4.5f), new Vector2(x1, y + 4.5f), DesignTokens.Text3, 1.4f);
+                }
             }
         }
 

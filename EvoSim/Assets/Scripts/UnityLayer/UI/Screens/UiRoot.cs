@@ -5,15 +5,16 @@ using UnityEngine.UIElements;
 namespace Evo.UnityLayer
 {
     /// <summary>
-    /// Builds every screen from code and owns the layers: setup, run (top bar, World region, side panel), toast, dialogs,
-    /// help, extinction, window-too-small and the overlay for tooltips and popups (DESIGN 3, 9).
+    /// Builds every screen from code and owns the floating Liquid Glass layers: Setup studio, Run HUD (TopBar, World stage
+    /// with CellInspector, Live Field Notes card, Bottom Quick-Event Dock, Thermal Legend, and SidePanel), toasts, dialogs,
+    /// Help guide, Extinction summary, Window-too-small guard, and Tooltip/Popup overlay.
     /// </summary>
     public sealed class UiRoot
     {
         readonly AppController app;
         readonly VisualElement root;
         readonly SetupScreen setup;
-        readonly VisualElement runLayer, worldRegion, toastHost, placementCard, legend;
+        readonly VisualElement runLayer, worldRegion, toastHost, placementCard, legend, eventDockWrap, fieldNotesCard, notesHistory;
         readonly TopBar topBar;
         readonly SidePanel sidePanel;
         readonly CellInspector inspector;
@@ -23,8 +24,11 @@ namespace Evo.UnityLayer
         readonly RunActionDialog confirm = new RunActionDialog();
         readonly VisualElement loading;
         readonly VisualElement tooSmall;
-        readonly Label placementText;
-        readonly IconElement placementIcon;
+        readonly Label placementText, latestNoteTitle, latestNoteBody, latestNoteTime;
+        readonly VisualElement latestNoteDot;
+        readonly IconElement placementIcon, notesChevron;
+        bool notesExpanded;
+        int shownNoteVersion = -1;
         Message toast;
         float toastUntil;
         Rect lastViewport;
@@ -45,13 +49,14 @@ namespace Evo.UnityLayer
             Ui.Overlay.Fill();
             Ui.Overlay.pickingMode = PickingMode.Ignore;
 
-            // Run layer: top bar over [World region | side panel]
+            // Run layer: floating TopBar over [World stage | floating SidePanel]
             runLayer = new VisualElement();
             runLayer.Fill();
             runLayer.pickingMode = PickingMode.Ignore;
             runLayer.style.flexDirection = FlexDirection.Column;
             topBar = new TopBar(app, this);
             runLayer.Add(topBar);
+
             VisualElement body = Ui.Row(Align.Stretch);
             body.style.flexGrow = 1;
             body.pickingMode = PickingMode.Ignore;
@@ -63,35 +68,48 @@ namespace Evo.UnityLayer
             body.Add(sidePanel);
             runLayer.Add(body);
 
+            // Top-left: Cell Inspector (shown when a Cell is selected)
             inspector = new CellInspector(app);
             worldRegion.Add(inspector);
 
+            // Top-right of World stage: Live Field Notes (real-time natural selection observations)
+            fieldNotesCard = BuildFieldNotes(out latestNoteDot, out latestNoteTitle, out latestNoteTime, out latestNoteBody, out notesHistory, out notesChevron);
+            worldRegion.Add(fieldNotesCard);
+
+            // Top-center of World stage: Active Event placement prompt
             placementCard = Ui.Row();
             placementCard.style.position = Position.Absolute;
-            placementCard.style.top = DesignTokens.Space4;
-            placementCard.style.alignSelf = Align.Center;
+            placementCard.style.top = DesignTokens.Space3;
             placementCard.style.left = 0;
             placementCard.style.right = 0;
             placementCard.style.justifyContent = Justify.Center;
             placementCard.pickingMode = PickingMode.Ignore;
             VisualElement pc = Ui.Row();
-            pc.style.backgroundColor = DesignTokens.Bg2;
-            pc.Border(DesignTokens.Border, DesignTokens.BorderWidth);
-            pc.style.borderLeftWidth = 3;
-            pc.style.borderLeftColor = DesignTokens.Accent;
-            pc.Round(DesignTokens.Radius);
-            pc.Pad(DesignTokens.Space3, DesignTokens.Space4);
+            pc.pickingMode = PickingMode.Position;
+            LiquidGlass.Attach(pc, DesignTokens.RadiusPill, GlassTone.Pill);
+            pc.Pad(DesignTokens.Space2, DesignTokens.Space4);
             placementIcon = new IconElement("event", 20f) { Tint = DesignTokens.AccentText };
-            placementIcon.style.marginRight = DesignTokens.Space3;
+            placementIcon.style.marginRight = DesignTokens.Space2;
             pc.Add(placementIcon);
-            placementText = Ui.Body("");
+            placementText = Ui.LabelText("", DesignTokens.Text1);
             pc.Add(placementText);
+            var cancelArm = new EvoButton(ButtonKind.Secondary, "Cancel", null, "event-cancel");
+            cancelArm.style.height = 30;
+            cancelArm.Pad(0, 10);
+            cancelArm.style.marginLeft = DesignTokens.Space3;
+            cancelArm.Clicked += app.CancelPlacement;
+            pc.Add(cancelArm);
             placementCard.Add(pc);
             placementCard.Show(false);
             worldRegion.Add(placementCard);
 
+            // Bottom-left of World stage: Thermal Legend pill (when Thermal map is toggled on)
             legend = BuildTemperatureLegend();
             worldRegion.Add(legend);
+
+            // Bottom-center of World stage: Quick-Action Environmental Event Dock
+            eventDockWrap = BuildEventDock();
+            worldRegion.Add(eventDockWrap);
 
             setup = new SetupScreen(app, this);
             eventDialog = new EventDialog(app);
@@ -102,7 +120,7 @@ namespace Evo.UnityLayer
             toastHost.style.position = Position.Absolute;
             toastHost.style.left = 0;
             toastHost.style.right = 0;
-            toastHost.style.top = DesignTokens.TopBarHeight + DesignTokens.Space4;
+            toastHost.style.top = DesignTokens.TopBarHeight + DesignTokens.Space5;
             toastHost.style.alignItems = Align.Center;
             toastHost.pickingMode = PickingMode.Ignore;
 
@@ -115,15 +133,16 @@ namespace Evo.UnityLayer
             tsMessage.style.maxWidth = 640;
             tooSmall.Add(tsMessage);
             tooSmall.Show(false);
+
             loading = new VisualElement();
             loading.Fill();
             loading.style.backgroundColor = DesignTokens.Scrim;
             loading.style.alignItems = Align.Center;
             loading.style.justifyContent = Justify.Center;
             var loadingCard = Ui.Column();
+            LiquidGlass.Attach(loadingCard, DesignTokens.RadiusPanel, GlassTone.Modal);
             loadingCard.Pad(DesignTokens.Space5);
-            loadingCard.style.backgroundColor = DesignTokens.Bg1;
-            loadingCard.Add(Ui.Body("Loading Run. Choose a file, or cancel."));
+            loadingCard.Add(Ui.Body("Loading Run. Choose a saved file, or cancel."));
             var cancelLoad = new EvoButton(ButtonKind.Secondary, "Cancel", null, "confirm-cancel");
             cancelLoad.style.marginTop = DesignTokens.Space4;
             cancelLoad.Clicked += app.CancelLoad;
@@ -146,17 +165,175 @@ namespace Evo.UnityLayer
             ShowSetup();
         }
 
+        VisualElement BuildEventDock()
+        {
+            VisualElement wrap = Ui.Row();
+            wrap.style.position = Position.Absolute;
+            wrap.style.left = 0;
+            wrap.style.right = 0;
+            wrap.style.bottom = DesignTokens.Space3;
+            wrap.style.justifyContent = Justify.Center;
+            wrap.pickingMode = PickingMode.Ignore;
+
+            VisualElement dock = Ui.Row();
+            dock.pickingMode = PickingMode.Position;
+            LiquidGlass.Attach(dock, DesignTokens.RadiusPanel, GlassTone.Pill);
+            dock.Pad(6, DesignTokens.Space3);
+
+            Label prompt = Ui.CaptionBold("Trigger Event", DesignTokens.Text2);
+            prompt.style.marginLeft = DesignTokens.Space1;
+            prompt.style.marginRight = DesignTokens.Space3;
+            prompt.pickingMode = PickingMode.Position;
+            Tooltips.Attach(prompt, "events");
+            dock.Add(prompt);
+
+            for (int i = 0; i < EventInfo.Ids.Length; i++)
+            {
+                EventKind kind = (EventKind)i;
+                var btn = new EvoButton(ButtonKind.Secondary, EventInfo.Names[i], EventInfo.Ids[i], "event-" + EventInfo.Ids[i]);
+                btn.style.height = 36;
+                btn.Pad(0, 12);
+                btn.Round(DesignTokens.RadiusPill);
+                btn.AccentOverride = EventsMenu.AccentFor(kind);
+                if (i > 0) btn.style.marginLeft = 6;
+                btn.Clicked += () => OpenEventDialog(kind);
+                dock.Add(btn);
+            }
+
+            wrap.Add(dock);
+            return wrap;
+        }
+
+        VisualElement BuildFieldNotes(
+            out VisualElement dot,
+            out Label title,
+            out Label time,
+            out Label body,
+            out VisualElement historyBox,
+            out IconElement chevron)
+        {
+            VisualElement card = Ui.Column();
+            card.style.position = Position.Absolute;
+            card.style.right = DesignTokens.Space3;
+            card.style.top = DesignTokens.Space3;
+            card.style.width = 340;
+            card.pickingMode = PickingMode.Position;
+            LiquidGlass.Attach(card, DesignTokens.RadiusCard, GlassTone.Pill);
+            card.Pad(DesignTokens.Space3, DesignTokens.Space4);
+
+            VisualElement header = Ui.Row();
+            Tooltips.Attach(header, "field-notes");
+            dot = new VisualElement();
+            dot.Size(9, 9);
+            dot.Round(5);
+            dot.style.backgroundColor = DesignTokens.Accent;
+            dot.style.marginRight = DesignTokens.Space2;
+            dot.style.flexShrink = 0;
+            dot.pickingMode = PickingMode.Ignore;
+            header.Add(dot);
+
+            title = Ui.CaptionBold("Field notes", DesignTokens.Text1);
+            title.style.flexGrow = 1;
+            header.Add(title);
+
+            time = Ui.MonoCaption("00:00", DesignTokens.Text3);
+            time.style.marginRight = DesignTokens.Space2;
+            header.Add(time);
+
+            chevron = new IconElement("chevron-down", 16f) { Tint = DesignTokens.Text2 };
+            header.Add(chevron);
+            card.Add(header);
+
+            body = Ui.Caption("", DesignTokens.Text2);
+            body.style.marginTop = 4;
+            card.Add(body);
+
+            historyBox = Ui.Column();
+            historyBox.style.marginTop = DesignTokens.Space2;
+            historyBox.Show(false);
+            card.Add(historyBox);
+
+            card.RegisterCallback<PointerDownEvent>(e =>
+            {
+                if (e.button != 0) return;
+                notesExpanded = !notesExpanded;
+                shownNoteVersion = -1;
+                RefreshFieldNotes();
+                e.StopPropagation();
+            });
+
+            return card;
+        }
+
+        void RefreshFieldNotes()
+        {
+            var notes = app.Narrator.Notes;
+            if (notes.Count == 0)
+            {
+                fieldNotesCard.Show(false);
+                return;
+            }
+            fieldNotesCard.Show(app.Armed == null);
+            if (shownNoteVersion == app.Narrator.Version) return;
+            shownNoteVersion = app.Narrator.Version;
+
+            FieldNote latest = notes[0];
+            latestNoteDot.style.backgroundColor = latest.Dot;
+            latestNoteTitle.text = latest.Title;
+            latestNoteTime.text = Ui.Mmss(latest.Time);
+            latestNoteBody.text = latest.Body;
+
+            bool hasMore = notes.Count > 1 && notesExpanded;
+            notesHistory.Show(hasMore);
+            notesChevron.Show(notes.Count > 1);
+            notesHistory.Clear();
+            if (hasMore)
+            {
+                int limit = Mathf.Min(notes.Count, 4);
+                for (int i = 1; i < limit; i++)
+                {
+                    FieldNote n = notes[i];
+                    VisualElement div = Ui.Divider(false);
+                    div.style.marginTop = DesignTokens.Space2;
+                    div.style.marginBottom = DesignTokens.Space2;
+                    notesHistory.Add(div);
+
+                    VisualElement r = Ui.Row();
+                    var d = new VisualElement();
+                    d.Size(7, 7);
+                    d.Round(4);
+                    d.style.backgroundColor = n.Dot;
+                    d.style.marginRight = DesignTokens.Space2;
+                    r.Add(d);
+                    Label nt = Ui.CaptionBold(n.Title, DesignTokens.Text2);
+                    nt.style.flexGrow = 1;
+                    r.Add(nt);
+                    r.Add(Ui.MonoCaption(Ui.Mmss(n.Time), DesignTokens.Text3));
+                    notesHistory.Add(r);
+
+                    Label nb = Ui.Caption(n.Body, DesignTokens.Text3);
+                    nb.style.marginTop = 2;
+                    notesHistory.Add(nb);
+                }
+            }
+        }
+
         VisualElement BuildTemperatureLegend()
         {
             VisualElement box = Ui.Column();
             box.style.position = Position.Absolute;
-            box.style.right = DesignTokens.Space2;
-            box.style.bottom = DesignTokens.Space2;
-            box.style.width = 160;
+            box.style.left = DesignTokens.Space3;
+            box.style.bottom = DesignTokens.Space3;
+            box.style.width = 176;
             box.pickingMode = PickingMode.Position;
+            LiquidGlass.Attach(box, DesignTokens.RadiusCard, GlassTone.Pill);
+            box.Pad(DesignTokens.Space2, DesignTokens.Space3);
             Tooltips.Attach(box, "temperature-legend");
+
             var bar = new VisualElement();
             bar.style.height = 8;
+            bar.Round(4);
+            bar.style.overflow = Overflow.Hidden;
             bar.pickingMode = PickingMode.Ignore;
             bar.generateVisualContent += ctx =>
             {
@@ -178,10 +355,11 @@ namespace Evo.UnityLayer
             };
             box.Add(bar);
             VisualElement labels = Ui.Row();
+            labels.style.marginTop = 3;
             labels.pickingMode = PickingMode.Ignore;
-            labels.Add(Ui.Caption("cold"));
+            labels.Add(Ui.Caption("Cold", DesignTokens.Text2));
             labels.Add(Ui.Spacer());
-            labels.Add(Ui.Caption("hot"));
+            labels.Add(Ui.Caption("Hot", DesignTokens.Text2));
             box.Add(labels);
             box.Show(false);
             return box;
@@ -201,6 +379,8 @@ namespace Evo.UnityLayer
         public void OnRunStarted()
         {
             CloseAll();
+            notesExpanded = false;
+            shownNoteVersion = -1;
             setup.Show(false);
             runLayer.Show(true);
             sidePanel.BindRun(app.Sim);
@@ -233,11 +413,18 @@ namespace Evo.UnityLayer
         public void OnPlacementChanged()
         {
             EventSpec a = app.Armed;
-            if (a == null) { placementCard.Show(false); return; }
+            if (a == null)
+            {
+                placementCard.Show(false);
+                RefreshFieldNotes();
+                return;
+            }
             int k = (int)a.Kind;
             placementIcon.Icon = EventInfo.Ids[k];
-            placementText.text = "Click the World to place " + EventInfo.Names[k].ToLowerInvariant() + ". Press Escape to cancel.";
+            placementIcon.Tint = EventsMenu.AccentFor(a.Kind);
+            placementText.text = "Click anywhere inside the World to place " + EventInfo.Names[k].ToLowerInvariant() + " (Esc cancels)";
             placementCard.Show(true);
+            fieldNotesCard.Show(false);
         }
 
         // ------------------------------------------------------------ dialogs
@@ -262,7 +449,6 @@ namespace Evo.UnityLayer
             ChartElement.HideReadouts();
         }
 
-        /// <summary>Escape closes the topmost popup. Returns true when something was closed.</summary>
         public bool HandleEscape()
         {
             if (app.Loading) { app.CancelLoad(); return true; }
@@ -294,7 +480,6 @@ namespace Evo.UnityLayer
         }
 
         // ------------------------------------------------------------ pointer
-        /// <summary>True when the pointer is over a UI element that takes pointer events (not the empty World region).</summary>
         public bool IsOverUi(Vector2 screen)
         {
             if (root.panel == null) return false;
@@ -303,13 +488,18 @@ namespace Evo.UnityLayer
             return hit != null && hit != root && hit != worldRegion;
         }
 
-        /// <summary>Gives the camera the part of the window that the World region covers.</summary>
+        /// <summary>Gives the camera the unobstructed stage rect so Fit() frames the World cleanly beside floating glass panels.</summary>
         public void SyncViewport()
         {
             Rect pb = root.layout;
             Rect wb = worldRegion.worldBound;
             if (pb.width < 10f || pb.height < 10f || wb.width < 10f || float.IsNaN(wb.width)) return;
-            var r = new Rect(wb.x / pb.width, 1f - wb.yMax / pb.height, wb.width / pb.width, wb.height / pb.height);
+            // Reserve top space for Field Notes and bottom space for the floating Event dock when framing Fit()
+            float topReserve = 78f;
+            float dockReserve = 62f;
+            float stageY = wb.yMin + topReserve;
+            float stageH = Mathf.Max(60f, wb.height - topReserve - dockReserve);
+            var r = new Rect(wb.x / pb.width, 1f - (stageY + stageH) / pb.height, wb.width / pb.width, stageH / pb.height);
             if (r == lastViewport) return;
             lastViewport = r;
             app.Cam.SetViewport(r);
@@ -331,6 +521,8 @@ namespace Evo.UnityLayer
             if (toast != null && Time.unscaledTime > toastUntil) { toast.RemoveFromHierarchy(); toast = null; }
             if (app.Mode == AppMode.Setup) return;
             legend.Show(app.TintOn);
+            eventDockWrap.Show(app.Mode != AppMode.Extinct);
+            RefreshFieldNotes();
             topBar.Tick(realDt);
             sidePanel.Tick(realDt);
             inspector.Tick(realDt);

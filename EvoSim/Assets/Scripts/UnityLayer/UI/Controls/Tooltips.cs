@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>The tooltip card (DESIGN 4.10). Also used by charts for their hover read-outs.</summary>
+    /// <summary>Liquid Glass tooltip & chart hover card. Ordinary tooltips ignore pointer picking.</summary>
     public sealed class TooltipCard : VisualElement
     {
         readonly VisualElement body = new VisualElement();
@@ -17,10 +17,8 @@ namespace Evo.UnityLayer
             this.interactive = interactive;
             pickingMode = interactive ? PickingMode.Position : PickingMode.Ignore;
             style.position = Position.Absolute;
-            style.backgroundColor = DesignTokens.Bg2;
-            this.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
-            this.Round(DesignTokens.Radius);
-            this.Pad(DesignTokens.Space2, DesignTokens.Space3);
+            LiquidGlass.Attach(this, DesignTokens.RadiusCard, GlassTone.Modal);
+            this.Pad(DesignTokens.Space3, DesignTokens.Space4);
             style.maxWidth = DesignTokens.TooltipMaxWidth;
             style.visibility = Visibility.Hidden;
             body.pickingMode = PickingMode.Ignore;
@@ -37,26 +35,26 @@ namespace Evo.UnityLayer
         {
             body.Clear();
             scroll.scrollOffset = Vector2.zero;
-            body.Add(Ui.CaptionBold(tip.Name, DesignTokens.Text1));
+            body.Add(Ui.Subhead(tip.Name, DesignTokens.Text1));
             if (!string.IsNullOrEmpty(tip.Body))
             {
                 Label l = Ui.Caption(tip.Body, DesignTokens.Text2);
-                l.style.marginTop = DesignTokens.Space1 / 2;
+                l.style.marginTop = DesignTokens.Space1;
                 body.Add(l);
             }
             if (!string.IsNullOrEmpty(tip.Key))
             {
-                Label l = Ui.Caption(tip.Key, DesignTokens.Text3);
-                l.style.marginTop = DesignTokens.Space1;
+                Label l = Ui.MonoCaption(tip.Key, DesignTokens.AccentText);
+                l.style.marginTop = DesignTokens.Space2;
                 body.Add(l);
             }
         }
 
-        /// <summary>A chart read-out: a title line and rows with an optional colour swatch, a name and a value.</summary>
+        /// <summary>A chart read-out: a title line and rows with an optional colour swatch, a name and a tabular value.</summary>
         public void SetRows(string title, List<ReadoutRow> rows)
         {
             body.Clear();
-            body.Add(Ui.CaptionBold(title, DesignTokens.Text1));
+            body.Add(Ui.CaptionBold(title, DesignTokens.AccentText));
             foreach (ReadoutRow r in rows)
             {
                 VisualElement row = Ui.Row();
@@ -67,7 +65,7 @@ namespace Evo.UnityLayer
                     var sw = new VisualElement();
                     sw.pickingMode = PickingMode.Ignore;
                     sw.Size(10, 10);
-                    sw.Round(DesignTokens.RadiusCheckbox);
+                    sw.Round(5);
                     sw.style.backgroundColor = r.Swatch.Value;
                     sw.style.marginRight = DesignTokens.Space2;
                     sw.style.flexShrink = 0;
@@ -76,7 +74,7 @@ namespace Evo.UnityLayer
                 Label name = Ui.Caption(r.Name, DesignTokens.Text2);
                 name.style.flexGrow = 1;
                 row.Add(name);
-                Label val = Ui.Caption(r.Value, DesignTokens.Text1);
+                Label val = Ui.MonoCaption(r.Value, DesignTokens.Text1);
                 val.style.marginLeft = DesignTokens.Space4;
                 val.style.unityTextAlign = TextAnchor.MiddleRight;
                 row.Add(val);
@@ -84,7 +82,6 @@ namespace Evo.UnityLayer
             }
         }
 
-        /// <summary>Places the card below and to the right of a point, flipped to stay inside the parent.</summary>
         public void PlaceNear(Vector2 point)
         {
             style.left = point.x + 14;
@@ -94,7 +91,7 @@ namespace Evo.UnityLayer
             {
                 float available = Mathf.Max(DesignTokens.ControlHeight, parent.layout.height - DesignTokens.Space2);
                 style.maxHeight = available;
-                scroll.style.maxHeight = available - DesignTokens.Space4;
+                scroll.style.maxHeight = available - DesignTokens.Space5;
                 style.maxWidth = Mathf.Min(DesignTokens.TooltipMaxWidth, parent.layout.width - DesignTokens.Space2);
             }
             RegisterCallbackOnce<GeometryChangedEvent>(e => Reposition(point));
@@ -123,10 +120,6 @@ namespace Evo.UnityLayer
         public string Value;
     }
 
-    /// <summary>
-    /// UI Toolkit does not show tooltips in a running player, so elements register here (DESIGN 4.10).
-    /// A tooltip appears after 400 ms of hovering and goes away on leave or press.
-    /// </summary>
     public static class Tooltips
     {
         public static readonly HashSet<string> AttachedIds = new HashSet<string>();

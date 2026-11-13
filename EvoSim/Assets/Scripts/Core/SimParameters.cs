@@ -166,7 +166,7 @@ namespace Evo.Core
     {
         public const string Custom = "Custom";
 
-        public static readonly string[] Names = { "Mild world", "Cold gradient", "Toxic basin" };
+        public static readonly string[] Names = { "Mild world", "Cold gradient", "Toxic basin", "Rapid evolution" };
 
         public static SetupSettings Get(string name)
         {
@@ -178,6 +178,8 @@ namespace Evo.Core
                     return new SetupSettings { SeedText = "gradient", FoodAbundance = 0.9f, TemperatureRange = 1.0f, ZoneScale = 1.0f, ToxinLevel = 0.1f, MutationRate = 1.0f };
                 case "Toxic basin":
                     return new SetupSettings { SeedText = "basin", FoodAbundance = 1.2f, TemperatureRange = 0.5f, ZoneScale = 1.5f, ToxinLevel = 0.9f, MutationRate = 1.0f };
+                case "Rapid evolution":
+                    return new SetupSettings { SeedText = "rapid", FoodAbundance = 1.45f, TemperatureRange = 0.85f, ZoneScale = 1.35f, ToxinLevel = 0.25f, MutationRate = 2.0f };
                 default:
                     return null;
             }

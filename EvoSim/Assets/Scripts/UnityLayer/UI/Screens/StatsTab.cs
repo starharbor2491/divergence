@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>Stats tab (PLAN 12.2, DESIGN 5.7): live counts in two columns, then deaths by cause.</summary>
+    /// <summary>Stats tab: bento grid of live ecosystem figures plus stacked Deaths by cause chart.</summary>
     public sealed class StatsTab : PanelTab
     {
         readonly Label alive, births, deaths, maxGen, living, extinct, sexual;
@@ -13,23 +13,40 @@ namespace Evo.UnityLayer
 
         public StatsTab(AppController app) : base(app)
         {
-            VisualElement grid = Ui.Column();
-            grid.style.marginTop = DesignTokens.Space2;
-            alive = AddRow(grid, "cells alive", "stat-readout");
-            births = AddRow(grid, "births per minute", "stat-readout");
-            deaths = AddRow(grid, "deaths per minute", "stat-readout");
-            maxGen = AddRow(grid, "highest generation", "stat-readout");
-            living = AddRow(grid, "living species", "stat-readout");
-            extinct = AddRow(grid, "extinct species", "stat-readout");
-            sexual = AddRow(grid, "sexual share", "stat-sexual-share");
-            Add(grid);
+            VisualElement r1 = Ui.Row();
+            r1.style.marginTop = DesignTokens.Space1;
+            alive = StatCard(r1, "Cells alive", "stat-readout", false, true);
+            living = StatCard(r1, "Living Species", "stat-readout", true, true);
+            maxGen = StatCard(r1, "Highest Gen", "stat-readout", true, false);
+            Add(r1);
 
-            FixedHeight(chart, 220);
+            VisualElement r2 = Ui.Row();
+            r2.style.marginTop = DesignTokens.Space2;
+            births = StatCard(r2, "Births / min", "stat-readout", false, false);
+            deaths = StatCard(r2, "Deaths / min", "stat-readout", true, false);
+            extinct = StatCard(r2, "Extinct Species", "stat-readout", true, false);
+            Add(r2);
+
+            VisualElement sexRow = Ui.Row();
+            sexRow.style.marginTop = DesignTokens.Space2;
+            LiquidGlass.StyleWell(sexRow, DesignTokens.Radius);
+            sexRow.Pad(DesignTokens.Space2, DesignTokens.Space3);
+            sexRow.pickingMode = PickingMode.Position;
+            Tooltips.Attach(sexRow, "stat-sexual-share");
+            sexRow.Add(Ui.Caption("Cells using sexual reproduction", DesignTokens.Text2));
+            sexRow.Add(Ui.Spacer());
+            sexual = Ui.Mono("", DesignTokens.AccentText, DesignTokens.TypeBodySize);
+            sexRow.Add(sexual);
+            Add(sexRow);
+
+            FixedHeight(chart, 210);
             VisualElement deathsBox = Ui.Column();
             deathsBox.Add(chart);
-            deathsBox.Add(Ui.Caption("Last 10 minutes. Legend: Run totals."));
+            Label sub = Ui.Caption("Bars show latest 10 minutes. Legend counts the whole Run.");
+            sub.style.marginTop = DesignTokens.Space2;
+            deathsBox.Add(sub);
             VisualElement legendBox = Ui.Column();
-            legendBox.style.marginTop = DesignTokens.Space2;
+            legendBox.style.marginTop = DesignTokens.Space1;
             for (int c = 0; c < DeathCauses.Count; c++)
             {
                 legend[c] = new LegendRow("legend-cause");
@@ -39,19 +56,21 @@ namespace Evo.UnityLayer
             Add(Section("Deaths by cause", "Cells per 10 s", "chart-deaths", UiText.Body("chart-deaths"), deathsBox));
         }
 
-        Label AddRow(VisualElement parent, string name, string tipId)
+        static Label StatCard(VisualElement parent, string name, string tipId, bool gap, bool accent)
         {
-            VisualElement row = Ui.Row();
-            row.style.height = 28;
-            Label n = Ui.Caption(name);
-            n.pickingMode = PickingMode.Position;
-            Tooltips.Attach(n, tipId);
-            n.style.flexGrow = 1;
-            row.Add(n);
-            Label v = Ui.Body("");
-            v.style.unityTextAlign = TextAnchor.MiddleRight;
-            row.Add(v);
-            parent.Add(row);
+            VisualElement card = Ui.Column();
+            card.style.flexGrow = 1;
+            card.style.flexBasis = 0;
+            if (gap) card.style.marginLeft = DesignTokens.Space2;
+            LiquidGlass.StyleWell(card, DesignTokens.Radius);
+            card.Pad(DesignTokens.Space2, DesignTokens.Space3);
+            card.pickingMode = PickingMode.Position;
+            Tooltips.Attach(card, tipId);
+            card.Add(Ui.Caption(name, DesignTokens.Text3));
+            Label v = Ui.Mono("", accent ? DesignTokens.AccentText : DesignTokens.Text1, DesignTokens.TypeTitleSize);
+            v.style.marginTop = 2;
+            card.Add(v);
+            parent.Add(card);
             return v;
         }
 

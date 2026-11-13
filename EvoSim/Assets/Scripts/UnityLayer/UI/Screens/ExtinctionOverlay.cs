@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>"Population extinct" card over the frozen World (DESIGN 6.4).</summary>
+    /// <summary>Liquid Glass "Population extinct" summary card over the frozen World (DESIGN 6.4).</summary>
     public sealed class ExtinctionOverlay : VisualElement
     {
         readonly Label runTime, maxGeneration, speciesEver;
@@ -19,25 +19,34 @@ namespace Evo.UnityLayer
 
             var card = new VisualElement();
             card.style.width = DesignTokens.ExtinctionWidth;
-            card.style.backgroundColor = DesignTokens.Bg1;
-            card.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
-            card.Round(DesignTokens.Radius);
+            LiquidGlass.Attach(card, DesignTokens.RadiusPanel, GlassTone.Modal);
             card.Pad(DesignTokens.Space5);
             Add(card);
 
             VisualElement head = Ui.Row();
-            var icon = new IconElement("status-critical", 32f) { Tint = DesignTokens.StatusCritical };
-            icon.style.marginRight = DesignTokens.Space3;
-            head.Add(icon);
-            head.Add(Ui.Heading(UiText.PopulationExtinct, DesignTokens.Text1));
+            var badge = new VisualElement();
+            badge.Size(44, 44);
+            badge.Round(14);
+            badge.style.backgroundColor = DesignTokens.WithAlpha(DesignTokens.StatusCritical, 0.18f);
+            badge.Border(DesignTokens.WithAlpha(DesignTokens.StatusCritical, 0.45f), 1);
+            badge.style.alignItems = Align.Center;
+            badge.style.justifyContent = Justify.Center;
+            badge.style.marginRight = DesignTokens.Space3;
+            badge.Add(new IconElement("status-critical", 24f) { Tint = DesignTokens.StatusCritical });
+            head.Add(badge);
+
+            VisualElement titleCol = Ui.Column();
+            titleCol.Add(Ui.Heading(UiText.PopulationExtinct, DesignTokens.Text1));
+            titleCol.Add(Ui.Caption("Every Cell in the World ran out of energy or succumbed to Pressures.", DesignTokens.Text2));
+            head.Add(titleCol);
             card.Add(head);
 
-            VisualElement rows = Ui.Column();
-            rows.style.marginTop = DesignTokens.Space4;
-            runTime = Row(rows, "run time");
-            maxGeneration = Row(rows, "highest generation");
-            speciesEver = Row(rows, "species ever");
-            card.Add(rows);
+            VisualElement stats = Ui.Row();
+            stats.style.marginTop = DesignTokens.Space4;
+            runTime = StatPill(stats, "Run time", false);
+            maxGeneration = StatPill(stats, "Highest Gen", true);
+            speciesEver = StatPill(stats, "Species ever", true);
+            card.Add(stats);
 
             VisualElement buttons = Ui.Row();
             buttons.style.marginTop = DesignTokens.Space5;
@@ -56,16 +65,19 @@ namespace Evo.UnityLayer
             card.Add(buttons);
         }
 
-        static Label Row(VisualElement parent, string name)
+        static Label StatPill(VisualElement parent, string name, bool gap)
         {
-            VisualElement row = Ui.Row();
-            row.style.height = 28;
-            Label n = Ui.Caption(name);
-            n.style.flexGrow = 1;
-            row.Add(n);
-            Label v = Ui.Body("");
-            row.Add(v);
-            parent.Add(row);
+            VisualElement pill = Ui.Column();
+            pill.style.flexGrow = 1;
+            pill.style.flexBasis = 0;
+            if (gap) pill.style.marginLeft = DesignTokens.Space2;
+            LiquidGlass.StyleWell(pill, DesignTokens.Radius);
+            pill.Pad(DesignTokens.Space3);
+            pill.Add(Ui.Caption(name, DesignTokens.Text3));
+            Label v = Ui.Mono("", DesignTokens.Text1, DesignTokens.TypeTitleSize);
+            v.style.marginTop = 2;
+            pill.Add(v);
+            parent.Add(pill);
             return v;
         }
 

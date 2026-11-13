@@ -13,6 +13,11 @@ MonoBehaviour:
   m_Name: RenderAssets
   m_EditorClassIdentifier: Evo.UnityLayer::Evo.UnityLayer.RenderAssets
   UnlitVertexColorTexture: {fileID: 4800000, guid: 7c0a40df90c5d41ff9f444060591fb74, type: 3}
+  LiquidGlassBackdrop: {fileID: 4800000, guid: 4609eb917464d41eda76c5f2ab58b219, type: 3}
+  UiFontRegular: {fileID: 12800000, guid: 8449e566e16d8422097f55abe2b9f531, type: 3}
+  UiFontMedium: {fileID: 12800000, guid: c8e67d61b6af54e498f039c6da753383, type: 3}
+  UiFontSemiBold: {fileID: 12800000, guid: 751088ad708854b20a55ca8269919c0f, type: 3}
+  UiFontBold: {fileID: 12800000, guid: 587ec787e29ad450ebcfc20b245bdd80, type: 3}
   FontRegular: {fileID: 12800000, guid: 249031cc975f447458e1f36f02888990, type: 3}
   FontMedium: {fileID: 12800000, guid: 68616d59f90ee43b68d5a187b8e161a2, type: 3}
   FontBold: {fileID: 12800000, guid: b39c89197ab8748a79a89be5b9099d5b, type: 3}

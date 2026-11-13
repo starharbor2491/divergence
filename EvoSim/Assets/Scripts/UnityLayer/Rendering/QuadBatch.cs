@@ -75,6 +75,19 @@ namespace Evo.UnityLayer
             vertices[v + 3] = new Vertex { Position = new Vector3(cx + halfW, cy - halfH, 0f), Color = color, Uv = new Vector2(1f, 0f) };
         }
 
+        /// <summary>A rotated quad centred on (cx, cy) aligned to (cos, sin).</summary>
+        public void RotatedQuad(float cx, float cy, float halfForward, float halfSide, float cos, float sin, Color32 color)
+        {
+            if (count >= capacity) return;
+            float fx = cos * halfForward, fy = sin * halfForward;
+            float sx = -sin * halfSide, sy = cos * halfSide;
+            int v = count++ * 4;
+            vertices[v] = new Vertex { Position = new Vector3(cx - fx - sx, cy - fy - sy, 0f), Color = color, Uv = new Vector2(0f, 0f) };
+            vertices[v + 1] = new Vertex { Position = new Vector3(cx - fx + sx, cy - fy + sy, 0f), Color = color, Uv = new Vector2(0f, 1f) };
+            vertices[v + 2] = new Vertex { Position = new Vector3(cx + fx + sx, cy + fy + sy, 0f), Color = color, Uv = new Vector2(1f, 1f) };
+            vertices[v + 3] = new Vertex { Position = new Vector3(cx + fx - sx, cy + fy - sy, 0f), Color = color, Uv = new Vector2(1f, 0f) };
+        }
+
         /// <summary>A line segment drawn as a rotated rectangle of the given thickness.</summary>
         public void Segment(float x0, float y0, float x1, float y1, float thickness, Color32 color)
         {

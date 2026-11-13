@@ -8,7 +8,7 @@ namespace Evo.UnityLayer
 
     /// <summary>
     /// The small state machine that owns the Run: Setup, Running, Paused, Extinct (PLAN 14.5).
-    /// The views (World, UI) read this object and call its methods; none of them owns state.
+    /// Also runs a lightweight ambient preview World behind the Liquid Glass Setup screen while keeping Sim == null in Setup.
     /// </summary>
     public sealed class AppController : MonoBehaviour
     {
@@ -23,6 +23,7 @@ namespace Evo.UnityLayer
         public EventSpec Armed { get; private set; }
         public bool Loading { get; private set; }
         public float EffectiveSpeed { get { return runner.EffectiveSpeed; } }
+        public readonly LiveNarrator Narrator = new LiveNarrator();
 
         public WorldView WorldView { get; private set; }
         public CameraController Cam { get; private set; }
@@ -30,6 +31,9 @@ namespace Evo.UnityLayer
         public InputRouter Input { get; private set; }
 
         readonly SimulationRunner runner = new SimulationRunner();
+        readonly SimulationRunner previewRunner = new SimulationRunner();
+        Simulation previewSim;
+        string previewSignature;
         int fitFrames;
         int loadVersion;
         AppMode beforeLoad;
@@ -46,6 +50,7 @@ namespace Evo.UnityLayer
         {
             Ui = ui;
             Input = input;
+            RefreshSetupPreview();
         }
 
         void Awake() { Instance = this; }
@@ -53,6 +58,32 @@ namespace Evo.UnityLayer
         public bool HasRun { get { return Sim != null; } }
         public bool Paused { get { return Mode == AppMode.Paused; } }
         public int SpeedMultiplier { get { return SimulationRunner.Speeds[SpeedIndex]; } }
+
+        // ------------------------------------------------------------ ambient setup preview
+        static string DraftSignature(SetupSettings s)
+        {
+            if (s == null) return "";
+            return (s.SeedText ?? "mild") + "|" + s.FoodAbundance.ToString("0.00") + "|" + s.TemperatureRange.ToString("0.00")
+                + "|" + s.ZoneScale.ToString("0.00") + "|" + s.ToxinLevel.ToString("0.00") + "|" + s.MutationRate.ToString("0.00");
+        }
+
+        public void RefreshSetupPreview()
+        {
+            if (Mode != AppMode.Setup || Sim != null) return;
+            string sig = DraftSignature(SetupDraft);
+            if (previewSim != null && sig == previewSignature && !previewSim.Extinct) return;
+            previewSignature = sig;
+            SetupSettings copy = SetupDraft != null ? SetupDraft.Clone() : Presets.Get("Mild world");
+            if (string.IsNullOrWhiteSpace(copy.SeedText)) copy.SeedText = "mild";
+            previewSim = Simulation.Create(copy, new SimParameters());
+            // Warm up 4 seconds so Cells are already swimming gracefully when Setup opens
+            for (int i = 0; i < 80 && !previewSim.Extinct; i++) previewSim.Step();
+            previewRunner.Reset();
+            WorldView.SetSimulation(previewSim);
+            WorldView.TintOn = false;
+            Cam.SetWorld(previewSim.World.Width, previewSim.World.Height);
+            Cam.FitCentered(0.88f);
+        }
 
         // ------------------------------------------------------------ frame
         void Update()
@@ -69,12 +100,20 @@ namespace Evo.UnityLayer
                     Ui.OnModeChanged();
                 }
             }
-            WorldView.TintOn = TintOn;
-            ValidateHighlight();
             if (Sim != null)
             {
+                WorldView.TintOn = TintOn;
+                if (Armed != null) WorldView.PreviewKind = Armed.Kind;
+                ValidateHighlight();
+                Narrator.Tick(dt);
                 Ui.SyncViewport();
                 if (fitFrames > 0) { Cam.Fit(); fitFrames--; }
+            }
+            else if (Mode == AppMode.Setup)
+            {
+                if (previewSim == null || previewSim.Extinct) RefreshSetupPreview();
+                else if (!Ui.WindowTooSmall && !Ui.ModalOpen) previewRunner.Advance(previewSim, dt, 1);
+                Cam.FitCentered(0.88f);
             }
             WorldView.Render(Cam, dt);
             Ui.Tick(dt);
@@ -98,11 +137,13 @@ namespace Evo.UnityLayer
         void Begin(Simulation sim, AppMode mode)
         {
             CancelLoad();
+            previewSim = null;
             Sim = sim;
             FileBridge.ProtectRun(true);
             Mode = mode;
             Armed = null;
             runner.Reset();
+            Narrator.Bind(sim);
             WorldView.SetSimulation(sim);
             WorldView.TintOn = TintOn;
             Cam.SetWorld(sim.World.Width, sim.World.Height);
@@ -120,10 +161,13 @@ namespace Evo.UnityLayer
             CancelLoad();
             SetupDraft = Sim != null ? Sim.Setup.Clone() : SetupDraft;
             Sim = null;
+            Narrator.Bind(null);
             FileBridge.ProtectRun(false);
             Mode = AppMode.Setup;
             Armed = null;
             WorldView.SetSimulation(null);
+            previewSignature = null;
+            RefreshSetupPreview();
             Ui.OnModeChanged();
         }
 
@@ -161,7 +205,7 @@ namespace Evo.UnityLayer
         public void SelectAt(Vector2 world)
         {
             if (Sim == null) return;
-            Cell c = Sim.PickCell(world.x, world.y, 1f);
+            Cell c = Sim.PickCell(world.x, world.y, 1.25f);
             WorldView.SelectedCellId = c != null ? c.Id : WorldView.NoCell;
         }
 
@@ -185,6 +229,7 @@ namespace Evo.UnityLayer
         public void BeginPlacement(EventSpec spec)
         {
             Armed = spec;
+            WorldView.PreviewKind = spec.Kind;
             Ui.OnPlacementChanged();
         }
 

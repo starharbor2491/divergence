@@ -6,7 +6,7 @@ namespace Evo.UnityLayer
 {
     public enum ButtonKind { Primary, Secondary, Icon, Tab }
 
-    /// <summary>Button, icon button, toggle and tab in one class (DESIGN 4.1, 4.2 and 4.7). Colours come from tokens only.</summary>
+    /// <summary>Liquid Glass button, icon button, toggle and segmented pill tab. Colours come from DesignTokens only.</summary>
     public sealed class EvoButton : VisualElement
     {
         public event Action Clicked;
@@ -15,6 +15,7 @@ namespace Evo.UnityLayer
         readonly IconElement icon;
         readonly Label label;
         bool hover, pressed, disabled, toggled, selected;
+        Color? customIconTint;
         string tipId;
 
         public EvoButton(ButtonKind kind, string text, string iconName, string tipId)
@@ -26,29 +27,31 @@ namespace Evo.UnityLayer
             style.height = DesignTokens.ControlHeight;
             style.minWidth = DesignTokens.ControlHeight;
             style.flexShrink = 0;
-            this.Round(DesignTokens.Radius);
+            this.Round(kind == ButtonKind.Primary ? DesignTokens.RadiusPill : DesignTokens.Radius);
             focusable = false;
 
             if (iconName != null)
             {
-                icon = new IconElement(iconName, 20f);
+                icon = new IconElement(iconName, 18f);
                 Add(icon);
             }
             if (!string.IsNullOrEmpty(text))
             {
                 label = Ui.LabelText(text);
+                label.style.whiteSpace = WhiteSpace.NoWrap;
                 if (icon != null) label.style.marginLeft = DesignTokens.Space2;
                 Add(label);
             }
-            if (kind == ButtonKind.Icon)
+            if (kind == ButtonKind.Icon && string.IsNullOrEmpty(text))
             {
                 style.width = DesignTokens.ControlHeight;
             }
             else
             {
-                this.Pad(0, DesignTokens.Space4);
+                this.Pad(0, kind == ButtonKind.Primary ? DesignTokens.Space5 : 14);
             }
-            if (kind == ButtonKind.Secondary) this.Border(DesignTokens.BorderStrong, DesignTokens.BorderWidth);
+
+            generateVisualContent += PaintHighlight;
 
             RegisterCallback<PointerEnterEvent>(e => { hover = true; Refresh(); });
             RegisterCallback<PointerLeaveEvent>(e => { hover = false; Refresh(); });
@@ -60,6 +63,12 @@ namespace Evo.UnityLayer
         }
 
         public string TipId { get { return tipId; } }
+
+        public Color? AccentOverride
+        {
+            get { return customIconTint; }
+            set { customIconTint = value; Refresh(); }
+        }
 
         public void SetTip(string id)
         {
@@ -74,14 +83,12 @@ namespace Evo.UnityLayer
             set { disabled = value; Refresh(); }
         }
 
-        /// <summary>The on state of a toggle (icon in accent-text with a 2 px accent line along the bottom).</summary>
         public bool Toggled
         {
             get { return toggled; }
             set { toggled = value; Refresh(); }
         }
 
-        /// <summary>The chosen member of a segmented control or the open tab.</summary>
         public bool Selected
         {
             get { return selected; }
@@ -120,11 +127,40 @@ namespace Evo.UnityLayer
             return local.x >= 0 && local.y >= 0 && local.x <= layout.width && local.y <= layout.height;
         }
 
+        void PaintHighlight(MeshGenerationContext ctx)
+        {
+            if (disabled) return;
+            float w = layout.width, h = layout.height;
+            if (float.IsNaN(w) || w < 6f || h < 6f) return;
+            bool showGloss = kind == ButtonKind.Primary || (kind == ButtonKind.Secondary && (hover || selected || toggled)) || (kind == ButtonKind.Tab && selected);
+            if (!showGloss) return;
+
+            float rad = Mathf.Min(resolvedStyle.borderTopLeftRadius, Mathf.Min(w, h) * 0.5f);
+            Painter2D p = ctx.painter2D;
+            p.lineCap = LineCap.Round;
+            p.lineWidth = 1.15f;
+            p.strokeColor = kind == ButtonKind.Primary ? new Color(1f, 1f, 1f, 0.50f) : new Color(1f, 1f, 1f, 0.28f);
+            p.BeginPath();
+            float rr = Mathf.Max(0f, rad - 0.6f);
+            if (rr > 0.5f)
+            {
+                p.MoveTo(new Vector2(0.6f + rr, 0.8f));
+                p.LineTo(new Vector2(w - 0.6f - rr, 0.8f));
+            }
+            else
+            {
+                p.MoveTo(new Vector2(2f, 0.8f));
+                p.LineTo(new Vector2(w - 2f, 0.8f));
+            }
+            p.Stroke();
+        }
+
         void Refresh()
         {
             Color bg = Color.clear, fg = DesignTokens.Text1, iconColor = DesignTokens.Text2;
-            Color borderColor = DesignTokens.BorderStrong;
-            bool underline = false;
+            Color borderColor = Color.clear;
+            float borderW = 0f;
+
             switch (kind)
             {
                 case ButtonKind.Primary:
@@ -133,40 +169,59 @@ namespace Evo.UnityLayer
                     iconColor = fg;
                     break;
                 case ButtonKind.Secondary:
-                    bg = pressed ? DesignTokens.Bg4 : ((hover || selected) && !disabled ? DesignTokens.Bg3 : DesignTokens.Bg2);
-                    fg = disabled ? DesignTokens.TextDisabled : (selected ? DesignTokens.AccentText : DesignTokens.Text1);
-                    iconColor = fg;
-                    borderColor = disabled ? DesignTokens.Border : DesignTokens.BorderStrong;
+                    bool activeSec = toggled || selected;
+                    bg = disabled ? DesignTokens.GlassInset
+                        : (pressed ? DesignTokens.Bg4
+                        : (activeSec ? DesignTokens.AccentSubtle
+                        : (hover ? DesignTokens.Bg3 : DesignTokens.Bg2)));
+                    fg = disabled ? DesignTokens.TextDisabled : (activeSec ? DesignTokens.AccentText : DesignTokens.Text1);
+                    iconColor = customIconTint.HasValue && !disabled && !activeSec ? customIconTint.Value : fg;
+                    borderColor = disabled ? DesignTokens.Border : (activeSec ? DesignTokens.WithAlpha(DesignTokens.Accent, 0.55f) : DesignTokens.BorderStrong);
+                    borderW = DesignTokens.BorderWidth;
                     break;
                 case ButtonKind.Icon:
-                    bg = pressed ? DesignTokens.Bg4 : ((hover || selected) && !disabled ? DesignTokens.Bg3 : Color.clear);
+                    bool activeIcon = toggled || selected;
+                    bg = pressed ? DesignTokens.Bg4
+                        : (activeIcon && !disabled ? DesignTokens.AccentSubtle
+                        : (hover && !disabled ? DesignTokens.Bg3 : Color.clear));
                     iconColor = disabled ? DesignTokens.TextDisabled
-                        : (toggled || selected ? DesignTokens.AccentText : (hover ? DesignTokens.Text1 : DesignTokens.Text2));
-                    underline = toggled;
+                        : (activeIcon ? DesignTokens.AccentText
+                        : (customIconTint.HasValue ? customIconTint.Value
+                        : (hover ? DesignTokens.Text1 : DesignTokens.Text2)));
+                    fg = activeIcon ? DesignTokens.AccentText : (hover ? DesignTokens.Text1 : DesignTokens.Text2);
+                    if (activeIcon && !disabled)
+                    {
+                        borderColor = DesignTokens.WithAlpha(DesignTokens.Accent, 0.45f);
+                        borderW = 1f;
+                    }
                     break;
                 case ButtonKind.Tab:
-                    bg = pressed ? DesignTokens.Bg4 : (hover && !disabled ? DesignTokens.Bg3 : Color.clear);
-                    fg = selected ? DesignTokens.Text1 : DesignTokens.Text2;
-                    iconColor = selected ? DesignTokens.AccentText : DesignTokens.Text2;
-                    underline = selected;
+                    bg = pressed ? DesignTokens.Bg4
+                        : (selected ? DesignTokens.Bg3
+                        : (hover && !disabled ? DesignTokens.WithAlpha(DesignTokens.Bg3, 0.40f) : Color.clear));
+                    fg = selected ? DesignTokens.Text1 : (hover ? DesignTokens.Text1 : DesignTokens.Text2);
+                    iconColor = selected ? DesignTokens.AccentText : fg;
+                    if (selected)
+                    {
+                        borderColor = DesignTokens.BorderStrong;
+                        borderW = 1f;
+                    }
                     break;
             }
+
             style.backgroundColor = bg;
-            if (kind == ButtonKind.Secondary) this.Border(borderColor, DesignTokens.BorderWidth);
-            if (kind == ButtonKind.Icon || kind == ButtonKind.Tab)
-            {
-                style.borderBottomWidth = underline ? 2 : 0;
-                style.borderBottomColor = DesignTokens.Accent;
-            }
-            if (label != null) label.style.color = (kind == ButtonKind.Icon) ? iconColor : fg;
+            this.Border(borderColor, borderW);
+            if (label != null) label.style.color = fg;
             if (icon != null) icon.Tint = iconColor;
+            MarkDirtyRepaint();
         }
 
-        /// <summary>Square corners at one end, for segmented controls (DESIGN 4.2).</summary>
+        /// <summary>Adjusts outer ends for segmented controls.</summary>
         public void RoundEnds(bool left, bool right)
         {
-            style.borderTopLeftRadius = style.borderBottomLeftRadius = left ? DesignTokens.Radius : 0;
-            style.borderTopRightRadius = style.borderBottomRightRadius = right ? DesignTokens.Radius : 0;
+            float r = DesignTokens.Radius - 2;
+            style.borderTopLeftRadius = style.borderBottomLeftRadius = left ? r : 6;
+            style.borderTopRightRadius = style.borderBottomRightRadius = right ? r : 6;
         }
     }
 }

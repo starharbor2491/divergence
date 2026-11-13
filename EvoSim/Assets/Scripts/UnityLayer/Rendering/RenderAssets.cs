@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 namespace Evo.UnityLayer
 {
     /// <summary>
-    /// Holds the references the build must keep. The shader is referenced here instead of being found by name,
+    /// Holds the references the build must keep. Shaders and fonts are referenced here instead of being found by name,
     /// because Shader.Find can be stripped from a build. The asset lives in Assets/Resources.
     /// </summary>
     public sealed class RenderAssets : ScriptableObject
@@ -12,6 +12,8 @@ namespace Evo.UnityLayer
         public const string ResourceName = "RenderAssets";
 
         public Shader UnlitVertexColorTexture;
+        public Shader LiquidGlassBackdrop;
+        public Font UiFontRegular, UiFontMedium, UiFontSemiBold, UiFontBold;
         public Font FontRegular, FontMedium, FontBold;
         public ThemeStyleSheet RuntimeTheme;
 

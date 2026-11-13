@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>Every icon of DESIGN.md 2.8, drawn on a 24 by 24 grid with Painter2D. There are no image files.</summary>
+    /// <summary>Every icon of DESIGN.md, drawn on a 24 by 24 grid with Painter2D. There are no image files.</summary>
     public static class Icons
     {
         public static readonly string[] Names =
@@ -12,7 +12,8 @@ namespace Evo.UnityLayer
             "screenshot", "help", "panel", "home", "close", "chevron-down", "check", "random", "restart",
             "tab-traits", "tab-species", "tab-tree", "tab-stats",
             "heat-wave", "ice-age", "famine", "food-bloom", "toxin-spill",
-            "status-good", "status-warning", "status-critical", "status-serious", "glyph-branch"
+            "status-good", "status-warning", "status-critical", "status-serious", "glyph-branch",
+            "fit", "notes"
         };
 
         /// <summary>Draws an icon with its top left corner at the origin, scaled so that 24 units equal size.</summary>
@@ -22,7 +23,7 @@ namespace Evo.UnityLayer
             switch (name)
             {
                 case "play": d.FillPoly(true, 8, 5, 19, 12, 8, 19); break;
-                case "pause": d.FillRound(7, 5, 3.5f, 14, 1); d.FillRound(13.5f, 5, 3.5f, 14, 1); break;
+                case "pause": d.FillRound(7, 5, 3.5f, 14, 1.2f); d.FillRound(13.5f, 5, 3.5f, 14, 1.2f); break;
                 case "speed-1": d.Line(false, 9, 6, 15, 12, 9, 18); break;
                 case "speed-2": d.Line(false, 6, 6, 12, 12, 6, 18); d.Line(false, 12, 6, 18, 12, 12, 18); break;
                 case "speed-3": d.Line(false, 4, 6, 9, 12, 4, 18); d.Line(false, 9, 6, 14, 12, 9, 18); d.Line(false, 14, 6, 19, 12, 14, 18); break;
@@ -35,29 +36,39 @@ namespace Evo.UnityLayer
                 case "save": d.Line(false, 12, 4, 12, 14); d.Line(false, 8, 10, 12, 14, 16, 10); d.Line(false, 5, 15, 5, 20, 19, 20, 19, 15); break;
                 case "load": d.Line(false, 12, 14, 12, 4); d.Line(false, 8, 8, 12, 4, 16, 8); d.Line(false, 5, 15, 5, 20, 19, 20, 19, 15); break;
                 case "csv":
-                    d.Round(4, 5, 16, 14, 1); d.Line(false, 4, 10, 20, 10); d.Line(false, 4, 14.5f, 20, 14.5f); d.Line(false, 10, 5, 10, 19);
+                    d.Round(4, 5, 16, 14, 2); d.Line(false, 4, 10, 20, 10); d.Line(false, 4, 14.5f, 20, 14.5f); d.Line(false, 10, 5, 10, 19);
                     break;
                 case "screenshot":
                     d.Line(false, 4, 9, 4, 4, 9, 4); d.Line(false, 15, 4, 20, 4, 20, 9);
-                    d.Line(false, 20, 15, 20, 20, 15, 20); d.Line(false, 9, 20, 4, 20, 4, 15); d.Circle(12, 12, 3);
+                    d.Line(false, 20, 15, 20, 20, 15, 20); d.Line(false, 9, 20, 4, 20, 4, 15); d.Circle(12, 12, 3.2f);
                     break;
-                case "help": d.Circle(12, 12, 9); break; // the "?" is a Label added by IconElement
+                case "fit":
+                    d.Line(false, 4, 9, 4, 4, 9, 4); d.Line(false, 15, 4, 20, 4, 20, 9);
+                    d.Line(false, 20, 15, 20, 20, 15, 20); d.Line(false, 9, 20, 4, 20, 4, 15);
+                    d.FillCircle(12, 12, 1.8f);
+                    break;
+                case "notes":
+                    d.Circle(12, 12, 8.5f);
+                    d.FillCircle(12, 8, 1.2f);
+                    d.Line(false, 12, 11.5f, 12, 16.5f);
+                    break;
+                case "help": d.Circle(12, 12, 9); break;
                 case "panel":
-                    d.Round(3, 5, 18, 14, 1); d.Line(false, 15, 5, 15, 19);
-                    if (on) d.FillRound(15, 5, 6, 14, 0);
+                    d.Round(3, 5, 18, 14, 2.5f); d.Line(false, 14.5f, 5, 14.5f, 19);
+                    if (on) d.FillRound(14.5f, 5, 6.5f, 14, 1.5f);
                     break;
                 case "home": d.Line(false, 4, 12, 12, 4, 20, 12); d.Line(false, 6, 11, 6, 20, 18, 20, 18, 11); break;
-                case "close": d.Line(false, 6, 6, 18, 18); d.Line(false, 18, 6, 6, 18); break;
+                case "close": d.Line(false, 6.5f, 6.5f, 17.5f, 17.5f); d.Line(false, 17.5f, 6.5f, 6.5f, 17.5f); break;
                 case "chevron-down": d.Line(false, 7, 10, 12, 15, 17, 10); break;
                 case "check": d.Line(false, 5, 12.5f, 10, 17.5f, 19, 7); break;
                 case "random":
-                    d.Round(4, 4, 16, 16, 3); d.FillCircle(9, 9, 1.4f); d.FillCircle(15, 15, 1.4f); d.FillCircle(12, 12, 1.4f);
+                    d.Round(4, 4, 16, 16, 3.5f); d.FillCircle(9, 9, 1.4f); d.FillCircle(15, 15, 1.4f); d.FillCircle(12, 12, 1.4f);
                     break;
                 case "restart": d.Arc(12, 12, 7, -60, 240); d.Line(false, 17, 3, 17.5f, 8, 12.5f, 8); break;
                 case "tab-traits": d.Line(false, 4, 8, 20, 8); d.Line(false, 4, 16, 20, 16); d.FillCircle(9, 8, 2.5f); d.FillCircle(15, 16, 2.5f); break;
                 case "tab-species": d.Circle(9, 12, 5); d.Circle(15, 12, 5); break;
-                case "tab-tree": d.Line(false, 4, 12, 10, 12, 10, 6, 20, 6); d.Line(false, 10, 12, 10, 18, 20, 18); break;
-                case "tab-stats": d.FillRound(5, 12, 3, 7, 0); d.FillRound(10.5f, 6, 3, 13, 0); d.FillRound(16, 9, 3, 10, 0); break;
+                case "tab-tree": d.Branch(); break;
+                case "tab-stats": d.FillRound(5, 12, 3, 7, 1); d.FillRound(10.5f, 6, 3, 13, 1); d.FillRound(16, 9, 3, 10, 1); break;
                 case "heat-wave":
                     d.Circle(12, 12, 4);
                     for (int i = 0; i < 8; i++)
@@ -68,7 +79,7 @@ namespace Evo.UnityLayer
                     break;
                 case "ice-age": d.Line(false, 12, 3, 12, 21); d.Line(false, 4.2f, 7.5f, 19.8f, 16.5f); d.Line(false, 19.8f, 7.5f, 4.2f, 16.5f); break;
                 case "famine": d.FillCircle(12, 12, 3.5f); d.Line(false, 5, 19, 19, 5); break;
-                case "food-bloom": d.FillCircle(8, 14, 2.5f); d.FillCircle(15, 15, 2.5f); d.FillCircle(12, 8, 2.5f); break;
+                case "food-bloom": d.FillCircle(8, 14, 2.6f); d.FillCircle(15, 15, 2.6f); d.FillCircle(12, 8, 2.6f); break;
                 case "toxin-spill": d.Drop(); break;
                 case "status-good": d.Circle(12, 12, 9); d.Line(false, 8, 12.5f, 11, 15.5f, 16, 9); break;
                 case "status-warning": d.Line(true, 12, 4, 21, 19, 3, 19); d.Line(false, 12, 10, 12, 14); d.FillCircle(12, 16.5f, 1); break;
@@ -78,7 +89,6 @@ namespace Evo.UnityLayer
             }
         }
 
-        /// <summary>Small drawing helper that works in 24-unit icon coordinates.</summary>
         struct Pen
         {
             readonly Painter2D p;
@@ -88,7 +98,7 @@ namespace Evo.UnityLayer
             public Pen(Painter2D p, Color color, float k)
             {
                 this.p = p; this.color = color; this.k = k;
-                p.lineWidth = 2f * k;
+                p.lineWidth = 1.9f * k;
                 p.lineCap = LineCap.Round;
                 p.lineJoin = LineJoin.Round;
                 p.strokeColor = color;
@@ -174,7 +184,7 @@ namespace Evo.UnityLayer
 
             public void Branch()
             {
-                p.lineWidth = 2.5f * k;
+                p.lineWidth = 2.2f * k;
                 p.BeginPath();
                 p.MoveTo(V(4, 12)); p.LineTo(V(10, 12));
                 p.BezierCurveTo(V(14, 12), V(15, 6), V(20, 6));
@@ -197,7 +207,7 @@ namespace Evo.UnityLayer
         float size;
         Label questionMark;
 
-        public IconElement(string icon, float size = 20f)
+        public IconElement(string icon, float size = 18f)
         {
             this.icon = icon;
             this.size = size;
@@ -210,7 +220,7 @@ namespace Evo.UnityLayer
             {
                 questionMark = new Label("?");
                 questionMark.pickingMode = PickingMode.Ignore;
-                Ui.Type(questionMark, FontRole.Bold, DesignTokens.TypeBodySize);
+                Ui.Type(questionMark, FontRole.Bold, DesignTokens.TypeLabelSize);
                 questionMark.style.position = Position.Absolute;
                 questionMark.style.left = 0; questionMark.style.top = 0;
                 questionMark.style.width = size; questionMark.style.height = size;

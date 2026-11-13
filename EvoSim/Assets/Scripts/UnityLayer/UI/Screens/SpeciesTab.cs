@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>Species tab (PLAN 12.2): stacked population chart and a legend of living Species. Clicking a row highlights its Cells.</summary>
+    /// <summary>Species tab: stacked population chart and interactive living Species list (click to spotlight in World).</summary>
     public sealed class SpeciesTab : PanelTab
     {
         readonly SpeciesChart chart = new SpeciesChart();
@@ -16,14 +16,23 @@ namespace Evo.UnityLayer
 
         public SpeciesTab(AppController app) : base(app)
         {
-            FixedHeight(chart, 260);
-            Add(Section("Species over time", "Cells", "chart-species", UiText.Body("chart-species"), chart));
-            Add(Ui.Caption("Top 20 Species by peak population; the rest share Other."));
+            var chartSection = Section("Species over time", "Cells", "chart-species", UiText.Body("chart-species"), chart);
+            chartSection.style.marginTop = DesignTokens.Space1;
+            FixedHeight(chart, 240);
+            Add(chartSection);
+
+            Label topNote = Ui.Caption("Top 20 Species by peak population; smaller lineages share Other.");
+            topNote.style.marginTop = DesignTokens.Space2;
+            Add(topNote);
             Add(other);
-            Label head = Ui.LabelText("Living Species");
-            head.style.marginTop = DesignTokens.Space5;
-            head.style.marginBottom = DesignTokens.Space2;
-            Add(head);
+
+            VisualElement headRow = Ui.Row();
+            headRow.style.marginTop = DesignTokens.Space4;
+            headRow.style.marginBottom = DesignTokens.Space1;
+            headRow.Add(Ui.Subhead("Living Species", DesignTokens.Text1));
+            headRow.Add(Ui.Spacer());
+            headRow.Add(Ui.Caption("Click to spotlight", DesignTokens.AccentText));
+            Add(headRow);
             Add(legendBox);
         }
 

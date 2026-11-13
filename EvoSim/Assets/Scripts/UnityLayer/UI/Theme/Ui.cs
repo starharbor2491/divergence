@@ -4,11 +4,12 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    public enum FontRole { Regular, Medium, Bold }
+    public enum FontRole { Regular, Medium, SemiBold, Bold, MonoRegular, MonoMedium, MonoBold }
 
     /// <summary>Small helpers that turn DesignTokens into element styles. Components call these and never write a literal.</summary>
     public static class Ui
     {
+        public static Font UiRegular, UiMedium, UiSemiBold, UiBold;
         public static Font FontRegular, FontMedium, FontBold;
 
         /// <summary>The element that receives popups and tooltips (a full-window layer above everything).</summary>
@@ -16,28 +17,40 @@ namespace Evo.UnityLayer
 
         static Font FontFor(FontRole role)
         {
-            Font f = role == FontRole.Bold ? FontBold : (role == FontRole.Medium ? FontMedium : FontRegular);
-            return f != null ? f : FontRegular;
+            Font f;
+            switch (role)
+            {
+                case FontRole.Bold: f = UiBold ?? FontBold; break;
+                case FontRole.SemiBold: f = UiSemiBold ?? UiMedium ?? FontMedium; break;
+                case FontRole.Medium: f = UiMedium ?? FontMedium; break;
+                case FontRole.MonoBold: f = FontBold ?? UiBold; break;
+                case FontRole.MonoMedium: f = FontMedium ?? FontRegular; break;
+                case FontRole.MonoRegular: f = FontRegular ?? UiRegular; break;
+                default: f = UiRegular ?? FontRegular; break;
+            }
+            return f ?? UiRegular ?? FontRegular;
         }
 
         public static void Type(VisualElement e, FontRole role, int size)
         {
             Font f = FontFor(role);
-            // The default runtime theme sets -unity-font-definition, which beats -unity-font, so set the definition.
             if (f != null) e.style.unityFontDefinition = new StyleFontDefinition(FontDefinition.FromFont(f));
             e.style.fontSize = size;
             e.style.unityFontStyleAndWeight = FontStyle.Normal;
             e.style.whiteSpace = WhiteSpace.Normal;
         }
 
-        // ---- type tokens (DESIGN 2.3)
+        // ---- type tokens (DESIGN 3): Plus Jakarta Sans for UI/prose, JetBrains Mono for figures/telemetry
         public static Label Display(string text, Color c) { return Make(text, FontRole.Bold, DesignTokens.TypeDisplaySize, c); }
         public static Label Heading(string text, Color c) { return Make(text, FontRole.Bold, DesignTokens.TypeHeadingSize, c); }
-        public static Label Title(string text) { return Make(text, FontRole.Bold, DesignTokens.TypeTitleSize, DesignTokens.Text1); }
+        public static Label Title(string text, Color? c = null) { return Make(text, FontRole.Bold, DesignTokens.TypeTitleSize, c ?? DesignTokens.Text1); }
+        public static Label Subhead(string text, Color? c = null) { return Make(text, FontRole.SemiBold, DesignTokens.TypeBodySize, c ?? DesignTokens.Text1); }
         public static Label Body(string text, Color? c = null) { return Make(text, FontRole.Regular, DesignTokens.TypeBodySize, c ?? DesignTokens.Text1); }
-        public static Label LabelText(string text, Color? c = null) { return Make(text, FontRole.Medium, DesignTokens.TypeLabelSize, c ?? DesignTokens.Text1); }
+        public static Label LabelText(string text, Color? c = null) { return Make(text, FontRole.SemiBold, DesignTokens.TypeLabelSize, c ?? DesignTokens.Text1); }
         public static Label Caption(string text, Color? c = null) { return Make(text, FontRole.Regular, DesignTokens.TypeCaptionSize, c ?? DesignTokens.Text3); }
-        public static Label CaptionBold(string text, Color? c = null) { return Make(text, FontRole.Bold, DesignTokens.TypeCaptionSize, c ?? DesignTokens.Text1); }
+        public static Label CaptionBold(string text, Color? c = null) { return Make(text, FontRole.SemiBold, DesignTokens.TypeCaptionSize, c ?? DesignTokens.Text1); }
+        public static Label Mono(string text, Color? c = null, int size = DesignTokens.TypeBodySize) { return Make(text, FontRole.MonoMedium, size, c ?? DesignTokens.Text1); }
+        public static Label MonoCaption(string text, Color? c = null) { return Make(text, FontRole.MonoRegular, DesignTokens.TypeCaptionSize, c ?? DesignTokens.Text3); }
 
         public static Label Make(string text, FontRole role, int size, Color color)
         {
@@ -74,7 +87,7 @@ namespace Evo.UnityLayer
             return e;
         }
 
-        /// <summary>1 px divider (DESIGN 6.2): a hairline 24 px high in a row, or full width in a column.</summary>
+        /// <summary>1 px divider: a hairline in a row or full width in a column.</summary>
         public static VisualElement Divider(bool vertical, int length = 24)
         {
             var e = new VisualElement();
@@ -89,9 +102,7 @@ namespace Evo.UnityLayer
         public static VisualElement Card(float pad = DesignTokens.Space4)
         {
             var e = new VisualElement();
-            e.style.backgroundColor = DesignTokens.Bg2;
-            e.Border(DesignTokens.Border, DesignTokens.BorderWidth);
-            e.Round(DesignTokens.Radius);
+            LiquidGlass.StyleWell(e, DesignTokens.RadiusCard);
             e.Pad(pad);
             return e;
         }
@@ -162,7 +173,7 @@ namespace Evo.UnityLayer
             return h > 0 ? string.Format("{0}:{1:00}:{2:00}", h, m, sec) : string.Format("{0:00}:{1:00}", m, sec);
         }
 
-        /// <summary>No thousands separator under 10,000; commas from 10,000 (DESIGN 2.3).</summary>
+        /// <summary>No thousands separator under 10,000; commas from 10,000.</summary>
         public static string Count(int n)
         {
             return n >= 10000 ? n.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) : n.ToString(System.Globalization.CultureInfo.InvariantCulture);

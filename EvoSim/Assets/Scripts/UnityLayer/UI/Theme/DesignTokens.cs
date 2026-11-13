@@ -19,63 +19,78 @@ namespace Evo.UnityLayer
             return new Color(((v >> 16) & 255) / 255f, ((v >> 8) & 255) / 255f, (v & 255) / 255f, alpha);
         }
 
-        // ------------------------------------------------------------ neutrals
-        public static readonly Color Bg0 = Hex("#0E1116");
-        public static readonly Color Bg1 = Hex("#171B22");
-        public static readonly Color Bg2 = Hex("#1F2530");
-        public static readonly Color Bg3 = Hex("#2A313D");
-        public static readonly Color Bg4 = Hex("#343C4A");
-        public static readonly Color Scrim = Hex("#0E1116", 0.7f);
-        public static readonly Color Border = Hex("#2C3440");
-        public static readonly Color BorderStrong = Hex("#6B7789");
-        public static readonly Color Text1 = Hex("#E6EAF0");
-        public static readonly Color Text2 = Hex("#A9B2C0");
-        public static readonly Color Text3 = Hex("#949FB0");
-        public static readonly Color TextDisabled = Hex("#5F6A7A");
+        // ------------------------------------------------------------ deep aquatic ground & Liquid Glass surfaces
+        public static readonly Color Bg0 = Hex("#061019");
+        public static readonly Color Bg1 = Hex("#0C1926", 0.58f);
+        public static readonly Color Bg2 = Hex("#182D42", 0.56f);
+        public static readonly Color Bg3 = Hex("#2A4A68", 0.68f);
+        public static readonly Color Bg4 = Hex("#3A6286", 0.78f);
+        public static readonly Color GlassModal = Hex("#0A1622", 0.84f);
+        public static readonly Color GlassInset = Hex("#06111B", 0.42f);
+        public static readonly Color GlassRimTop = Hex("#FFFFFF", 0.42f);
+        public static readonly Color GlassRimSide = Hex("#BAE6FD", 0.14f);
+        public static readonly Color GlassRimBottom = Hex("#5EEAD4", 0.22f);
+        public static readonly Color GlassSheen = Hex("#FFFFFF", 0.06f);
+        public static readonly Color GlassShadow = Hex("#02080F", 0.42f);
+        public static readonly Color Scrim = Hex("#040A10", 0.62f);
+        public static readonly Color Border = Hex("#A5D2F0", 0.15f);
+        public static readonly Color BorderStrong = Hex("#CDEBFF", 0.28f);
+        public static readonly Color Text1 = Hex("#F2F8FD");
+        public static readonly Color Text2 = Hex("#BDD0E2");
+        public static readonly Color Text3 = Hex("#8CA7C0");
+        public static readonly Color TextDisabled = Hex("#566E84");
 
-        // ------------------------------------------------------------ accent and focus
-        public static readonly Color Accent = Hex("#5E9CF0");
-        public static readonly Color AccentPressed = Hex("#4A86DA");
-        public static readonly Color AccentText = Hex("#8DB9F5");
-        public static readonly Color OnAccent = Hex("#0E1116");
-        public static readonly Color Focus = Hex("#8DB9F5");
+        // ------------------------------------------------------------ bioluminescent accent and focus
+        public static readonly Color Accent = Hex("#36DFC4");
+        public static readonly Color AccentPressed = Hex("#24BFA6");
+        public static readonly Color AccentText = Hex("#7CF5E0");
+        public static readonly Color AccentSubtle = Hex("#36DFC4", 0.16f);
+        public static readonly Color OnAccent = Hex("#04201C");
+        public static readonly Color Focus = Hex("#7CF5E0");
 
         // ------------------------------------------------------------ status
-        public static readonly Color StatusGood = Hex("#0CA30C");
-        public static readonly Color StatusWarning = Hex("#FAB219");
-        public static readonly Color StatusSerious = Hex("#EC835A");
-        public static readonly Color StatusCritical = Hex("#D03B3B");
+        public static readonly Color StatusGood = Hex("#34D399");
+        public static readonly Color StatusWarning = Hex("#FBBF24");
+        public static readonly Color StatusSerious = Hex("#FB923C");
+        public static readonly Color StatusCritical = Hex("#F87171");
 
-        // ------------------------------------------------------------ world
-        public static readonly Color WorldBg = Hex("#0E1116");
-        public static readonly Color WorldWall = Hex("#3A4352");
-        public static readonly Color WorldFood = Hex("#6FD6A8");
-        public static readonly Color WorldToxin = Hex("#D55181");
+        // ------------------------------------------------------------ living world
+        public static readonly Color WorldBg = Hex("#081622");
+        public static readonly Color WorldSubstrate = Hex("#122D44");
+        public static readonly Color WorldCaustic = Hex("#38BDF8");
+        public static readonly Color WorldWall = Hex("#548AB2");
+        public static readonly Color WorldFood = Hex("#5CE6A0");
+        public static readonly Color WorldFoodGlow = Hex("#34D399");
+        public static readonly Color WorldToxin = Hex("#F05A8E");
+        public static readonly Color WorldToxinHaze = Hex("#D946EF");
+        public static readonly Color WorldPredatorCore = Hex("#FB923C");
+        public static readonly Color WorldGrazerCore = Hex("#34D399");
         public static readonly Color WorldSelection = Hex("#FFFFFF");
-        public static readonly Color WorldEye = Hex("#14181F");
-        public static readonly Color WorldPreview = Hex("#5E9CF0");
+        public static readonly Color WorldSense = Hex("#7CF5E0");
+        public static readonly Color WorldEye = Hex("#09131C");
+        public static readonly Color WorldPreview = Hex("#7CF5E0");
 
         // ------------------------------------------------------------ temperature tint stops
-        public static readonly Color TempCold = Hex("#3987E5");
-        public static readonly Color TempMid = Hex("#4A5565");
-        public static readonly Color TempHot = Hex("#E66767");
+        public static readonly Color TempCold = Hex("#3898F5");
+        public static readonly Color TempMid = Hex("#173247");
+        public static readonly Color TempHot = Hex("#F26457");
 
         // ------------------------------------------------------------ charts
-        public static readonly Color ChartSeries1 = Hex("#3987E5");
-        public static readonly Color ChartGrid = Hex("#232A34");
-        public static readonly Color ChartAxis = Hex("#3A4352");
-        public static readonly Color ChartSurface = Hex("#171B22");
-        public static readonly Color Bin1 = Hex("#184F95");
-        public static readonly Color Bin2 = Hex("#256ABF");
-        public static readonly Color Bin3 = Hex("#3987E5");
-        public static readonly Color Bin4 = Hex("#6DA7EC");
-        public static readonly Color Bin5 = Hex("#9EC5F4");
-        public static readonly Color Bin6 = Hex("#CDE2FB");
-        public static readonly Color CauseEaten = Hex("#3987E5");
-        public static readonly Color CauseTemperature = Hex("#D95926");
-        public static readonly Color CauseOldAge = Hex("#199E70");
-        public static readonly Color CauseStarved = Hex("#C98500");
-        public static readonly Color CausePoisoned = Hex("#D55181");
+        public static readonly Color ChartSeries1 = Hex("#36DFC4");
+        public static readonly Color ChartGrid = Hex("#A5D2F0", 0.10f);
+        public static readonly Color ChartAxis = Hex("#A5D2F0", 0.24f);
+        public static readonly Color ChartSurface = Hex("#07131E", 0.46f);
+        public static readonly Color Bin1 = Hex("#114B5F");
+        public static readonly Color Bin2 = Hex("#1A6B7C");
+        public static readonly Color Bin3 = Hex("#228B94");
+        public static readonly Color Bin4 = Hex("#2EB0AC");
+        public static readonly Color Bin5 = Hex("#5FD4C4");
+        public static readonly Color Bin6 = Hex("#B5F5EC");
+        public static readonly Color CauseEaten = Hex("#38BDF8");
+        public static readonly Color CauseTemperature = Hex("#FB7185");
+        public static readonly Color CauseOldAge = Hex("#34D399");
+        public static readonly Color CauseStarved = Hex("#FBBF24");
+        public static readonly Color CausePoisoned = Hex("#E879F9");
 
         // ------------------------------------------------------------ spacing (px at 1920 x 1080)
         public const int Space1 = 4;
@@ -87,48 +102,51 @@ namespace Evo.UnityLayer
         public const int Space7 = 48;
 
         // ------------------------------------------------------------ shape and layout
-        public const int ControlHeight = 40;
-        public const int Radius = 4;
-        public const int RadiusCheckbox = 2;
+        public const int ControlHeight = 38;
+        public const int Radius = 12;
+        public const int RadiusCard = 16;
+        public const int RadiusPanel = 22;
+        public const int RadiusPill = 20;
+        public const int RadiusCheckbox = 6;
         public const int BorderWidth = 1;
         public const int TopBarHeight = 56;
         public const int SidePanelMin = 420;
-        public const int SidePanelMax = 560;
-        public const int SetupCardWidth = 720;
-        public const int InspectorWidth = 280;
+        public const int SidePanelMax = 520;
+        public const int SetupCardWidth = 1040;
+        public const int InspectorWidth = 312;
         public const int DialogWidth = 520;
-        public const int ExtinctionWidth = 480;
-        public const int HelpWidth = 1100;
+        public const int ExtinctionWidth = 500;
+        public const int HelpWidth = 1080;
         public const int HelpNavWidth = 240;
-        public const int TooltipMaxWidth = 320;
-        public const int TooltipDelayMs = 400;
-        public const int ScrollbarWidth = 8;
-        public const int SliderRowHeight = 64;
-        public const int SliderThumbSize = 16;
-        public const int SliderThumbHoverSize = 18;
+        public const int TooltipMaxWidth = 340;
+        public const int TooltipDelayMs = 320;
+        public const int ScrollbarWidth = 6;
+        public const int SliderRowHeight = 60;
+        public const int SliderThumbSize = 18;
+        public const int SliderThumbHoverSize = 20;
         public const int TreeRowHeight = 32;
         public const int TreeMinHeight = 460;
-        public const int EventChipSize = 20;
+        public const int EventChipSize = 22;
         public const int EventChipGap = 4;
-        public const int LegendRowHeight = 28;
+        public const int LegendRowHeight = 30;
         public const int ReferenceWidth = 1920;
         public const int ReferenceHeight = 1080;
         public const int MinWindowWidth = 1280;
         public const int MinWindowHeight = 720;
 
         // ------------------------------------------------------------ type (size; line height is the matching Line field)
-        public const int TypeDisplaySize = 48;
-        public const int TypeDisplayLine = 56;
-        public const int TypeHeadingSize = 28;
-        public const int TypeHeadingLine = 36;
-        public const int TypeTitleSize = 20;
-        public const int TypeTitleLine = 28;
+        public const int TypeDisplaySize = 44;
+        public const int TypeDisplayLine = 52;
+        public const int TypeHeadingSize = 26;
+        public const int TypeHeadingLine = 34;
+        public const int TypeTitleSize = 18;
+        public const int TypeTitleLine = 25;
         public const int TypeBodySize = 15;
         public const int TypeBodyLine = 22;
-        public const int TypeLabelSize = 15;
-        public const int TypeLabelLine = 22;
-        public const int TypeCaptionSize = 13;
-        public const int TypeCaptionLine = 18;
+        public const int TypeLabelSize = 14;
+        public const int TypeLabelLine = 20;
+        public const int TypeCaptionSize = 12;
+        public const int TypeCaptionLine = 17;
 
         // ------------------------------------------------------------ helpers
         public static readonly Color[] Bins = { Bin1, Bin2, Bin3, Bin4, Bin5, Bin6 };

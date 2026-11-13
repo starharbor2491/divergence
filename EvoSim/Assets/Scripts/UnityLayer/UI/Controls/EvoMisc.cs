@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 namespace Evo.UnityLayer
 {
-    /// <summary>20 px checkbox with a label (DESIGN 4.6).</summary>
+    /// <summary>Rounded Liquid Glass checkbox with label.</summary>
     public sealed class EvoCheckbox : VisualElement
     {
         public event Action<bool> Changed;
@@ -18,7 +18,7 @@ namespace Evo.UnityLayer
             style.alignItems = Align.Center;
             style.height = DesignTokens.ControlHeight;
             box = new VisualElement();
-            box.Size(20, 20);
+            box.Size(22, 22);
             box.Round(DesignTokens.RadiusCheckbox);
             box.style.alignItems = Align.Center;
             box.style.justifyContent = Justify.Center;
@@ -27,7 +27,7 @@ namespace Evo.UnityLayer
             box.Add(mark);
             Add(box);
             Label l = Ui.Body(text);
-            l.style.marginLeft = DesignTokens.Space2;
+            l.style.marginLeft = DesignTokens.Space3;
             Add(l);
             Tooltips.Attach(this, tipId);
             RegisterCallback<PointerEnterEvent>(e => { hover = true; Refresh(); });
@@ -55,7 +55,7 @@ namespace Evo.UnityLayer
         }
     }
 
-    /// <summary>Single line text field (DESIGN 4.4): 40 px, bg-2, focus outline, invalid hint.</summary>
+    /// <summary>Single line Liquid Glass text field (used for Seed codes in monospace).</summary>
     public sealed class EvoTextField : VisualElement
     {
         public event Action<string> Changed;
@@ -69,7 +69,7 @@ namespace Evo.UnityLayer
         {
             frame = new VisualElement();
             frame.style.height = DesignTokens.ControlHeight;
-            frame.style.backgroundColor = DesignTokens.Bg2;
+            frame.style.backgroundColor = DesignTokens.GlassInset;
             frame.style.justifyContent = Justify.Center;
             frame.Round(DesignTokens.Radius);
             frame.Pad(0, DesignTokens.Space3);
@@ -78,7 +78,6 @@ namespace Evo.UnityLayer
             field = new TextField();
             field.style.marginLeft = field.style.marginRight = field.style.marginTop = field.style.marginBottom = 0;
             field.style.flexGrow = 1;
-            VisualElement input = field.Q(className: "unity-base-text-field__input");
             field.RegisterCallback<GeometryChangedEvent>(e => StyleInput());
             field.RegisterCallback<FocusInEvent>(e => { focused = true; Refresh(); });
             field.RegisterCallback<FocusOutEvent>(e => { focused = false; Refresh(); });
@@ -105,7 +104,7 @@ namespace Evo.UnityLayer
             input.Border(Color.clear, 0);
             input.Pad(0);
             input.style.color = DesignTokens.Text1;
-            Ui.Type(input, FontRole.Regular, DesignTokens.TypeBodySize);
+            Ui.Type(input, FontRole.MonoMedium, DesignTokens.TypeBodySize);
             input.style.unityTextAlign = TextAnchor.MiddleLeft;
             field.style.unityTextAlign = TextAnchor.MiddleLeft;
         }
@@ -131,24 +130,30 @@ namespace Evo.UnityLayer
         }
     }
 
-    /// <summary>Status message block with an icon, text and an optional action (DESIGN 4.13).</summary>
+    /// <summary>Liquid Glass status pill with a soft circular status icon badge (no heavy border-left stripe).</summary>
     public sealed class Message : VisualElement
     {
         public Message(string status, string text)
         {
             style.flexDirection = FlexDirection.Row;
             style.alignItems = Align.Center;
-            style.backgroundColor = DesignTokens.Bg2;
+            LiquidGlass.Attach(this, DesignTokens.RadiusCard, GlassTone.Modal);
             this.Pad(DesignTokens.Space3, DesignTokens.Space4);
-            style.borderLeftWidth = 3;
             Color c = status == "status-good" ? DesignTokens.StatusGood
                 : status == "status-warning" ? DesignTokens.StatusWarning
                 : status == "status-critical" ? DesignTokens.StatusCritical : DesignTokens.StatusSerious;
-            style.borderLeftColor = c;
-            this.Round(DesignTokens.Radius);
-            var icon = new IconElement(status, 20f) { Tint = c };
-            icon.style.marginRight = DesignTokens.Space3;
-            Add(icon);
+
+            var badge = new VisualElement();
+            badge.Size(28, 28);
+            badge.Round(14);
+            badge.style.backgroundColor = DesignTokens.WithAlpha(c, 0.18f);
+            badge.style.alignItems = Align.Center;
+            badge.style.justifyContent = Justify.Center;
+            badge.style.marginRight = DesignTokens.Space3;
+            badge.style.flexShrink = 0;
+            badge.Add(new IconElement(status, 18f) { Tint = c });
+            Add(badge);
+
             Label l = Ui.Body(text);
             l.style.flexShrink = 1;
             Add(l);

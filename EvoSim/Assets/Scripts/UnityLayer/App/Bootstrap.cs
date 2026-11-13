@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 namespace Evo.UnityLayer
 {
     /// <summary>
-    /// Builds the whole program from code when the scene loads: camera, World view, UI document, input and the AppController.
+    /// Builds the whole program from code when the scene loads: camera, World view, Liquid Glass backdrop, UI document, input and AppController.
     /// Main.unity is nearly empty (PLAN 14.5).
     /// </summary>
     public static class Bootstrap
@@ -43,6 +43,8 @@ namespace Evo.UnityLayer
             doc.panelSettings = MakePanelSettings(assets);
             uiGo.SetActive(true);
 
+            GlassBackdrop.Create(host, camera, assets, doc);
+
             var ui = new UiRoot(app, doc.rootVisualElement);
             app.Attach(ui, new InputRouter(app));
             DevHarness.TryStart(app);
@@ -54,6 +56,11 @@ namespace Evo.UnityLayer
             Ui.FontRegular = assets != null && assets.FontRegular != null ? assets.FontRegular : fallback;
             Ui.FontMedium = assets != null && assets.FontMedium != null ? assets.FontMedium : Ui.FontRegular;
             Ui.FontBold = assets != null && assets.FontBold != null ? assets.FontBold : Ui.FontRegular;
+
+            Ui.UiRegular = assets != null && assets.UiFontRegular != null ? assets.UiFontRegular : Ui.FontRegular;
+            Ui.UiMedium = assets != null && assets.UiFontMedium != null ? assets.UiFontMedium : Ui.UiRegular;
+            Ui.UiSemiBold = assets != null && assets.UiFontSemiBold != null ? assets.UiFontSemiBold : Ui.UiMedium;
+            Ui.UiBold = assets != null && assets.UiFontBold != null ? assets.UiFontBold : Ui.UiSemiBold;
         }
 
         static PanelSettings MakePanelSettings(RenderAssets assets)

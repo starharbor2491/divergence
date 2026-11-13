@@ -18,6 +18,7 @@ namespace Evo.Editor
         public const string TokensPath = "Assets/UI/Theme/tokens.uss";
         public const string RenderAssetsPath = "Assets/Resources/RenderAssets.asset";
         public const string ShaderPath = "Assets/Shaders/UnlitVertexColorTexture.shader";
+        public const string GlassShaderPath = "Assets/Shaders/LiquidGlassBackdrop.shader";
         public const string ScenePath = "Assets/Scenes/Main.unity";
 
         [MenuItem("Divergence/Apply project setup")]
@@ -54,14 +55,20 @@ namespace Evo.Editor
                 AssetDatabase.CreateAsset(assets, RenderAssetsPath);
             }
             assets.UnlitVertexColorTexture = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath);
+            assets.LiquidGlassBackdrop = AssetDatabase.LoadAssetAtPath<Shader>(GlassShaderPath);
+            assets.UiFontRegular = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/PlusJakartaSans-Regular.ttf");
+            assets.UiFontMedium = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/PlusJakartaSans-Medium.ttf");
+            assets.UiFontSemiBold = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/PlusJakartaSans-SemiBold.ttf");
+            assets.UiFontBold = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/PlusJakartaSans-Bold.ttf");
             assets.FontRegular = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/JetBrainsMono-Regular.ttf");
             assets.FontMedium = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/JetBrainsMono-Medium.ttf");
             assets.FontBold = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/JetBrainsMono-Bold.ttf");
             assets.RuntimeTheme = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(ThemePath);
             EditorUtility.SetDirty(assets);
             if (assets.UnlitVertexColorTexture == null) Debug.LogError("Shader not found at " + ShaderPath);
+            if (assets.LiquidGlassBackdrop == null) Debug.LogError("Glass shader not found at " + GlassShaderPath);
             if (assets.RuntimeTheme == null) Debug.LogError("Runtime theme not found at " + ThemePath);
-            if (assets.FontRegular == null) Debug.LogError("Fonts not found under Assets/Fonts");
+            if (assets.FontRegular == null || assets.UiFontRegular == null) Debug.LogError("Fonts not found under Assets/Fonts");
         }
 
         static void CreateScene()
@@ -79,7 +86,7 @@ namespace Evo.Editor
         {
             PlayerSettings.companyName = "Yumei";
             PlayerSettings.productName = "Divergence";
-            PlayerSettings.bundleVersion = "1.0.0";
+            PlayerSettings.bundleVersion = "1.1.0";
             PlayerSettings.colorSpace = ColorSpace.Gamma;
             PlayerSettings.runInBackground = true;
             PlayerSettings.defaultWebScreenWidth = 1280;

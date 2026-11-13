@@ -102,5 +102,27 @@ namespace Evo.Tests
             Assert.AreEqual("evo-run-a-b-c-00m00s.json", RunFiles.RunFileName(a));
             Assert.AreEqual("evo-a-b-c-00m00s.png", RunFiles.ScreenshotFileName(a));
         }
+
+        [Test]
+        public void LiveNarratorRecordsEventsAndSpeciationWithoutForbiddenWords()
+        {
+            var banned = new Regex("\\b(gene|genes|tile|tiles|square|squares|organism|organisms|creature|creatures)\\b", RegexOptions.IgnoreCase);
+            Simulation sim = Simulation.Create(Presets.Get("Mild world"), new SimParameters());
+            var narrator = new LiveNarrator();
+            narrator.Bind(sim);
+            Assert.AreEqual(1, narrator.Notes.Count);
+            sim.PlaceEvent(new EventSpec { Kind = EventKind.HeatWave, X = 40, Y = 40, Radius = 20, Intensity = 0.3f, Duration = 60 });
+            sim.PlaceEvent(new EventSpec { Kind = EventKind.IceAge, X = 60, Y = 40, Radius = 20, Intensity = 0.3f, Duration = 60 });
+            sim.PlaceEvent(new EventSpec { Kind = EventKind.Famine, X = 80, Y = 40, Radius = 20, Duration = 60 });
+            sim.PlaceEvent(new EventSpec { Kind = EventKind.FoodBloom, X = 100, Y = 40, Radius = 20, Duration = 60 });
+            sim.PlaceEvent(new EventSpec { Kind = EventKind.ToxinSpill, X = 120, Y = 40, Radius = 20 });
+            sim.Species.Records.Add(new SpeciesRecord { Id = 2, ParentId = 1, Name = "Species 2", ColorR = 0.7f, ColorG = 0.9f, ColorB = 0.8f });
+            narrator.Tick(1.5f);
+            Assert.GreaterOrEqual(narrator.Notes.Count, 6);
+            foreach (FieldNote note in narrator.Notes)
+            {
+                Assert.IsFalse(banned.IsMatch(note.Title + " " + note.Body), "Forbidden word in narrator: " + note.Body);
+            }
+        }
     }
 }
