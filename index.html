@@ -1,48 +1,61 @@
 <!DOCTYPE html>
-<html lang="en-us">
+<html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Divergence</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236EC9A8' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M4 12h6c4 0 5-6 10-6M10 12c4 0 5 6 10 6'/%3E%3Ccircle cx='4' cy='12' r='2' fill='%236EC9A8' stroke='none'/%3E%3Ccircle cx='20' cy='6' r='2' fill='%236EC9A8' stroke='none'/%3E%3Ccircle cx='20' cy='18' r='2' fill='%236EC9A8' stroke='none'/%3E%3C/svg%3E">
     <style>
       html, body {
-        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
-        background: radial-gradient(circle at 50% 42%, #0B2032 0%, #061019 72%);
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #0C1117;
       }
       #unity-canvas {
-        position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
-        display: block; background: #061019; outline: none;
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        display: block;
+        background: #0C1117;
+        outline: none;
       }
       #status {
-        position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
-        padding: 28px 36px; border-radius: 22px; text-align: center;
-        background: rgba(12, 25, 38, 0.68);
-        border: 1px solid rgba(255, 255, 255, 0.24);
-        box-shadow: 0 20px 48px rgba(2, 8, 15, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35);
-        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        font-family: -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", "Segoe UI", sans-serif;
-        color: #F2F8FD;
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #A6B0BE;
       }
-      #title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 6px; }
-      #message { font-size: 14px; color: #BDD0E2; }
+      #message {
+        font-size: 13px;
+        letter-spacing: 0.01em;
+      }
       #bar {
-        width: 260px; height: 6px; background: rgba(6, 17, 27, 0.65);
-        border: 1px solid rgba(165, 210, 240, 0.16);
-        margin: 16px auto 0 auto; border-radius: 999px; overflow: hidden;
+        width: 180px;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.12);
+        margin: 12px auto 0;
+        border-radius: 1px;
+        overflow: hidden;
       }
       #fill {
-        width: 0; height: 100%;
-        background: linear-gradient(90deg, #24BFA6 0%, #36DFC4 60%, #7CF5E0 100%);
-        border-radius: 999px; transition: width 0.12s ease-out;
+        width: 0;
+        height: 100%;
+        background: #EEF1F6;
+        transition: width 0.1s linear;
       }
     </style>
   </head>
   <body>
     <canvas id="unity-canvas" tabindex="-1"></canvas>
     <div id="status">
-      <div id="title">Divergence</div>
-      <div id="message">Preparing the living World</div>
+      <div id="message">Loading Divergence</div>
       <div id="bar"><div id="fill"></div></div>
     </div>
     <script src="Build/WebGL.loader.js"></script>
@@ -63,7 +76,7 @@
         window.unityInstance = instance;
         statusBox.style.display = "none";
       }).catch(function (message) {
-        document.getElementById("message").textContent = "This browser could not start the simulation. Try a recent Chrome, Edge, Firefox or Safari. (" + message + ")";
+        document.getElementById("message").textContent = "Could not start WebGL (" + message + "). Try a recent Chrome, Firefox, Safari or Edge.";
         document.getElementById("bar").style.display = "none";
       });
     </script>
